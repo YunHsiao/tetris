@@ -1,10 +1,13 @@
 #include "Utility.h"
 #include "Scene.h"
 #include "SceneManager.h"
+#include "Input.h"
+#include "GUI.h"
 #include "xml.h"
 #include <direct.h>
 
 CScene::CScene() 
+	:m_input(0)
 {
 }
 
@@ -14,6 +17,7 @@ CScene::~CScene()
 
 void CScene::onInit() 
 {
+	m_input = CInput::getInstance();
 	UINT t; 
 	rand_s(&t);	
 	m_iNextP = t % 7 + 1; 
@@ -106,6 +110,9 @@ void CScene::NextTile()
 	m_iY -= t / 4;
 }
 
+// ETO_CLEAN 清除指定方块
+// ETO_DRAW  置入指定方块
+// ETO_EMPTY 简单碰撞检测
 bool CScene::Test(int sp[], int x, int y, int c) 
 {
 	int i, cx, cy;
@@ -123,6 +130,10 @@ bool CScene::Test(int sp[], int x, int y, int c)
 	return true;
 }
 
+// 详细碰撞检测：
+// 返回值 < 0  方块位于边界外
+// 返回值 == 0 方块位置正常
+// 返回值 > 0  方块与场景方块碰撞
 int CScene::FullCollision(int sp[], int x, int y) 
 {
 	int i, pool, mi = 8;
@@ -137,15 +148,54 @@ int CScene::FullCollision(int sp[], int x, int y)
 
 void CScene::onTick(int iElapsedTime) 
 {
-	if (m_bPaused || m_bOver) 
-		return;
+	// 游戏流程控制
+	if (m_input->GetKeyState('Q')) PostQuitMessage(0);
+	else if (m_input->GetKeyState('N')) NewGame();
+	else if (m_input->GetKeyState('S')) SaveGame();
+	else if (m_input->GetKeyState('L')) LoadGame();
+	else if (m_input->GetKeyState(VK_ESCAPE)) m_bPaused = !m_bPaused;
+	if (m_bPaused || m_bOver) return;
+	// 左右移动
 	m_iTime -= iElapsedTime;
-	if (m_bDown || m_iTime < 0) {
+	if (m_input->GetKeyState(VK_LEFT) && Test(m_map[m_iPattern][m_iStatus], 
+		m_iX - 1, m_iY, ETO_EMPTY)) {
+			m_iX--;
+			m_bUpdate = true;
+	} else if (m_input->GetKeyState(VK_RIGHT) && Test(m_map[m_iPattern][m_iStatus], 
+		m_iX + 1, m_iY, ETO_EMPTY)) {
+			m_iX++;
+			m_bUpdate = true;
+	}
+	// 方块旋转
+	if (m_input->GetKeyState(VK_SPACE) || m_input->GetKeyState(VK_UP)) {
+		int iNextS = (m_iStatus + 1) % 4;
+		int iCol;
+		int offset = 0; 
+		while ((iCol = FullCollision(m_map[m_iPattern][iNextS], m_iX + offset, m_iY)) < 0) {
+			m_iAdjust++;
+			if (m_iX > SCENE_WIDTH / 2) offset--;
+			else offset++;
+			if (abs(offset) > 2) {
+				offset = 0; 
+				break;
+			}
+		}
+		m_iX += offset;
+		if (iCol == 8) {
+			m_iStatus = iNextS;
+			m_bUpdate = true;
+		}
+	}
+	// 方块下落
+	if (m_iTime < 0 || m_input->GetKeyState(VK_DOWN) && m_iTime < KEY_VALID) {
+		// 方块下落一格
 		if (Test(m_map[m_iPattern][m_iStatus], m_iX, m_iY + 1, ETO_EMPTY))
 			m_iY++, m_iTime = DROP_INTERVAL;
 		else {
+			// 方块落入场景
 			Test(m_map[m_iPattern][m_iStatus], m_iX, m_iY, ETO_DRAW);
 			int x, t, cnt = 0;
+			// 消行检测与处理
 			for (int y = SCENE_HEIGHT; y > 0; y--) {
 				for (x = 0; m_pPool[x][y] > 0; x++);
 				if (m_pPool[x][y] < 0) {
@@ -155,17 +205,25 @@ void CScene::onTick(int iElapsedTime)
 							m_pPool[x][t] = m_pPool[x][t-1];
 				}
 			}
+			// 分数计算
 			if (cnt) {
 				m_iLines += cnt;
 				m_iScore += cnt * 15 - 5;
 				UpdateScore();
 			}
+			// 下一方块及游戏结束检测
 			NextTile();
 			if (!Test(m_map[m_iPattern][m_iStatus], m_iX, m_iY, ETO_EMPTY)) {
 				m_bOver = true; InitParams();
 			}
 		}
+	} else if (m_input->GetKeyInterval(VK_DOWN) < 300) {
+		// 双击直接落位
+		m_iY = m_iPY;
+		m_iTime = 0;
+		m_input->ResetKeyInterval(VK_DOWN);
 	}
+	// 预计下落位置更新
 	if (m_bUpdate) {
 		for (m_iPY = m_iY; m_iPY <= SCENE_HEIGHT; m_iPY++)
 			if (!Test(m_map[m_iPattern][m_iStatus], m_iX, m_iPY + 1, ETO_EMPTY))
@@ -174,10 +232,22 @@ void CScene::onTick(int iElapsedTime)
 	}
 }
 
+
+void CScene::onGUI()
+{
+	if (CGUI::Button("Load", 440, 20, VK_RETURN)) {
+		PostQuitMessage(0);
+	}
+	if (CGUI::Button("Cancel", 440, 80, VK_ESCAPE)) {
+		PostQuitMessage(0);
+	}
+}
+
 void CScene::onRender() 
 {
 	CSceneManager::getRenderer()->SpriteDraw(m_pBg);
 	SVector vPos = { 0.f, 0.f, 0.f };
+	// 暂停界面
 	if (m_bPaused && !m_bOver) {
 		static char str[8] = "Pause";
 		for (int x = 0; m_pPool[x][0] >= 0; x++) {
@@ -191,6 +261,7 @@ void CScene::onRender()
 		CSceneManager::getRenderer()->SpriteDrawText(str, &m_rScore, DT_CENTER);
 		return;
 	}
+	// 预计下落位置
 	Test(m_map[m_iPattern][m_iStatus], m_iX, m_iY, ETO_DRAW);
 	int* t = m_map[m_iPattern][m_iStatus];
 	for (int x = 0; x < 4; x++) {
@@ -202,6 +273,7 @@ void CScene::onRender()
 				m_color[t[y * 4 + x]] & 0x4fffffff);
 		}
 	}
+	// 已在场景中的方块
 	for (int x = 0; m_pPool[x][0] >= 0; x++) {
 		vPos.x = 50.f + x * 25;
 		for (int y = 1; m_pPool[x][y] >= 0; y++) {
@@ -211,6 +283,7 @@ void CScene::onRender()
 				m_color[m_pPool[x][y]] & m_mask);
 		}
 	}
+	// 下一方块
 	t = m_map[m_iNextP][m_iNextS];
 	for (int x = 0; x < 4; x++) {
 		vPos.x = 450.f + x * 25;
@@ -221,75 +294,9 @@ void CScene::onRender()
 				m_color[t[y * 4 + x]] & m_mask);
 		}
 	}
-	CSceneManager::getRenderer()->SpriteDrawText(m_score.c_str(), &m_rScore, DT_CENTER);
 	Test(m_map[m_iPattern][m_iStatus], m_iX, m_iY, ETO_CLEAN);
-}
-
-void CScene::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	switch (uMsg) {
-	case WM_KEYDOWN: 
-		if (wParam == 'Q') PostQuitMessage(0);
-		else if (wParam == 'N') NewGame();
-		else if (wParam == 'S') SaveGame();
-		else if (wParam == 'L') LoadGame();
-		else if (wParam == VK_DOWN) m_bDown = true;
-		if (!m_bOver) {
-			if (wParam == VK_LEFT && Test(m_map[m_iPattern][m_iStatus], 
-				m_iX - 1, m_iY, ETO_EMPTY)) {
-					m_iX--;
-					m_bUpdate = true;
-			} else if (wParam == VK_RIGHT && Test(m_map[m_iPattern][m_iStatus], 
-				m_iX + 1, m_iY, ETO_EMPTY)) {
-					m_iX++;
-					m_bUpdate = true;
-			}
-			if (wParam == VK_SPACE || wParam == VK_UP) {
-				int iNextS = (m_iStatus + 1) % 4;
-				int iCol;
-				int offset = 0; 
-				while ((iCol = FullCollision(m_map[m_iPattern][iNextS], m_iX + offset, m_iY)) < 0) {
-					m_iAdjust++;
-					if (m_iX > SCENE_WIDTH / 2) offset--;
-					else offset++;
-					if (abs(offset) > 2) {
-						offset = 0; 
-						break;
-					}
-				}
-				m_iX += offset;
-				if (iCol == 8) {
-					m_iStatus = iNextS;
-					m_bUpdate = true;
-				}
-			} else if (wParam == VK_ESCAPE) {
-				Toggle();
-			}
-		}
-		break;
-	case WM_KEYUP: 
-		if (wParam == VK_DOWN) {
-			m_bDown = false;
-			unsigned long lLastDown = timeGetTime();
-			if ((lLastDown - m_lLastDown) < 300) {
-				m_iY = m_iPY;
-				m_iTime = 0;
-			}
-			m_lLastDown = lLastDown;
-		}
-		break;
-	case WM_KILLFOCUS: 
-		if (!m_bPaused) { 
-			Pause(); 
-			m_bLost = true; 
-		} 
-		break;
-	case WM_SETFOCUS: 
-		if (m_bLost) { 
-			Resume(); 
-			m_bLost = false; 
-		} 
-		break;
-	}
+	// 分数及提示信息
+	CSceneManager::getRenderer()->SpriteDrawText(m_score.c_str(), &m_rScore, DT_CENTER);
 }
 
 void CScene::SaveGame() {

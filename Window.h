@@ -19,7 +19,6 @@ public:
 	RECT getWinRect() const { return m_winRect; }
 
 	void onInit();
-	void onDestroy();
 	void showWindow();
 	inline void HideCursor(bool bHide) {
 		if (bHide) while (::ShowCursor(false) >= 0);

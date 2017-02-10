@@ -1,6 +1,8 @@
 #include "Utility.h"
 #include "SceneManager.h"
 #include "Window.h"
+#include "Input.h"
+#include "GUI.h"
 #include "GDI.h"
 #include "Direct3D.h"
 #include "OpenGL.h"
@@ -55,6 +57,7 @@ void CSceneManager::onInit()
 {
 	CWindow::getInstance()->setWinSize(640, 640);
 	CWindow::getInstance()->onInit();
+	CInput::getInstance()->onInit();
 	if (GetAsyncKeyState(VK_CONTROL) & 0x8000){
 		s_pRenderer = new CGDI();
 		s_renderer = "GDI";
@@ -66,6 +69,7 @@ void CSceneManager::onInit()
 		s_renderer = "Direct3D";
 	}
 	s_pRenderer->onInit();
+	CGUI::onInit();
 	s_scene.onInit();
 	CWindow::getInstance()->showWindow();
 }
@@ -79,12 +83,9 @@ void CSceneManager::onRender()
 {
 	s_pRenderer->PreRender();
 	s_scene.onRender();
+	s_scene.onGUI();
 	s_pRenderer->SpriteDrawText(s_FPS.c_str(), 0, DT_RIGHT);
 	s_pRenderer->SpriteDrawText(s_renderer.c_str(), 0, DT_LEFT);
 	s_pRenderer->PostRender();
-}
-
-void CSceneManager::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
-{
-	s_scene.WndProc(hWnd, uMsg, wParam, lParam);
+	CInput::getInstance()->PostRender();
 }

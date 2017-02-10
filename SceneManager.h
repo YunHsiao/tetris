@@ -16,7 +16,9 @@ public:
 	void onInit();
 	void onTick(int iElapsedTime);
 	void onRender();
-	void WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+	inline void OnKillFocus() { s_scene.OnKillFocus(); }
+	inline void OnSetFocus() { s_scene.OnSetFocus(); }
 private:
 	static CSceneManager s_director;
 	static CRenderer* s_pRenderer;

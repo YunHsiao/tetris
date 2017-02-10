@@ -1,16 +1,18 @@
 #ifndef CScene_H_
 #define CScene_H_
 
-#define SCENE_WIDTH 12
-#define SCENE_HEIGHT 22
-#define DROP_INTERVAL 800
+#define SCENE_WIDTH 12		// 场景宽度
+#define SCENE_HEIGHT 22		// 场景高度
+#define DROP_INTERVAL 800	// 倒计时上限
+#define KEY_VALID 650		// 倒计时在此上限内按键有效
 
 enum ETestOperation {
-	ETO_EMPTY,
-	ETO_DRAW,
-	ETO_CLEAN
+	ETO_EMPTY,				 // 简单碰撞检测
+	ETO_DRAW,				 // 置入指定方块
+	ETO_CLEAN				 // 清除指定方块
 };
 
+class CInput;
 class CScene
 {
 public:
@@ -18,11 +20,10 @@ public:
 	~CScene();
 	void onInit();
 	void onTick(int iElapsedTime);
+	void onGUI();
 	void onRender();
-	void WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	inline void Pause() { m_bPaused = true; }
-	inline void Resume() { m_bPaused = false; }
-	inline void Toggle() { m_bPaused = !m_bPaused; }
+	inline void OnKillFocus() { if (!m_bPaused) { m_bPaused = true; m_bLost = true; } }
+	inline void OnSetFocus() { if (m_bLost) { m_bPaused = false; m_bLost = false; } }
 	void NewGame();
 	void SaveGame();
 	void LoadGame();
@@ -36,7 +37,7 @@ private:
 	int m_iX, m_iY, m_iPY, m_iPattern, m_iStatus, m_iTime, m_iNextP, m_iNextS;
 	int m_iAdjust, m_iScore, m_iLines, m_pBg, m_pTile;
 	unsigned long m_lLastDown;
-	bool m_bPaused, m_bDown, m_bLost, m_bOver, m_bUpdate;
+	bool m_bPaused, m_bLost, m_bOver, m_bUpdate, m_bDown;
 
 	// For Rendering
 	inline void UpdateScore() 
@@ -47,6 +48,7 @@ private:
 	}
 	SRect m_rScore;
 	std::string m_score;
+	CInput* m_input;
 	unsigned long m_color[8], m_mask;
 };
 #endif

@@ -1,6 +1,6 @@
 #include "Utility.h"
 #include "Window.h"
-#include "SceneManager.h"
+#include "Input.h"
 
 CWindow CWindow::s_wnd;
 
@@ -58,14 +58,9 @@ void CWindow::showWindow() {
 	UpdateWindow(m_hWnd);
 }
 
-
-void CWindow::onDestroy()
-{
-}
-
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	CSceneManager::getInstance()->WndProc(hWnd, uMsg, wParam, lParam);
+	CInput::getInstance()->WndProc(hWnd, uMsg, wParam, lParam);
 
 	switch (uMsg)
 	{
