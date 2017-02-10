@@ -65,15 +65,17 @@ bool COpenGL::onInit()
 
 float* COpenGL::TextPosition(float* p, std::vector<int>& len, RECT* rct, int Format, unsigned line)
 {
-	float xoff(11.f), yoff(30.f);
+	float x(11.f), y(24.f), ymargin(5.f);
 
-	if (Format & DT_CENTER) p[0] = rct->left + (rct->right - rct->left - len[line] * xoff) / 2.f;
-	else if (Format & DT_RIGHT) p[0] = rct->right - (len[line] + 1) * xoff;
+	if (Format & DT_CENTER) p[0] = rct->left + (rct->right - rct->left - len[line] * x) / 2.f;
+	else if (Format & DT_RIGHT) p[0] = rct->right - (len[line] + 1) * x;
 	else p[0] = rct->left + 1.f;
 
-	if (Format & DT_VCENTER) p[1] = rct->top + (rct->bottom - rct->top - len.size() * yoff) / 2.f + (line + 1) * yoff;
-	else if (Format & DT_BOTTOM) p[1] = rct->bottom - (len.size() - line) * yoff;
-	else p[1] = rct->top + (line + 1) * yoff;
+	if (Format & DT_VCENTER) p[1] = rct->top + (rct->bottom - rct->top - len.size() * y 
+		- (len.size() - 1) * ymargin) / 2.f + (line + 1) * y + line * ymargin;
+	else if (Format & DT_BOTTOM) p[1] = rct->bottom - (len.size() - line) * y 
+		- (len.size() - line - 1) * ymargin;
+	else p[1] = rct->top + (line + 1) * y + line * ymargin;
 
 	return p;
 }
@@ -123,14 +125,15 @@ void COpenGL::SpriteDraw(unsigned int pTexture, const SVector* pPosition, unsign
 	b = color & 0xff;
 
 	/**/
+	glColor4ub(r, g, b, a); 
 	glBindTexture(GL_TEXTURE_2D, m_vTexture[pTexture]);
 	glBegin(GL_QUADS);
-	glColor4ub(r, g, b, a); 
 	glTexCoord2f(0.f, 0.f);	glVertex2f(x, y);
 	glTexCoord2f(1.f, 0.f);	glVertex2f(x + m_vSize[pTexture].x, y);
 	glTexCoord2f(1.f, 1.f);	glVertex2f(x + m_vSize[pTexture].x, y + m_vSize[pTexture].y);
 	glTexCoord2f(0.f, 1.f);	glVertex2f(x, y + m_vSize[pTexture].y);
 	glEnd();
+	glBindTexture(GL_TEXTURE_2D, 0);
 	/**
 	glBegin(GL_QUADS);
 	glColor4ub(r, g, b, a); 

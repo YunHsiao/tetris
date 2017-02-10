@@ -11,9 +11,6 @@
     <ClCompile Include="GDI.cpp">
       <Filter>Renderer\GDI</Filter>
     </ClCompile>
-    <ClCompile Include="lodepng.cpp">
-      <Filter>Renderer\GDI</Filter>
-    </ClCompile>
     <ClCompile Include="OpenGL.cpp">
       <Filter>Renderer\OpenGL</Filter>
     </ClCompile>
@@ -34,6 +31,9 @@
       <Filter>Scene</Filter>
     </ClCompile>
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="lodepng.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
@@ -43,9 +43,6 @@
     </ClInclude>
     <ClInclude Include="Direct3D.h">
       <Filter>Renderer\Direct3D</Filter>
-    </ClInclude>
-    <ClInclude Include="lodepng.h">
-      <Filter>Renderer\GDI</Filter>
     </ClInclude>
     <ClInclude Include="GDI.h">
       <Filter>Renderer\GDI</Filter>
@@ -70,6 +67,9 @@
       <Filter>Scene</Filter>
     </ClInclude>
     <ClInclude Include="Input.h" />
+    <ClInclude Include="lodepng.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="tetris.rc" />

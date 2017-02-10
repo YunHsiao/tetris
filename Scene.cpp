@@ -62,6 +62,18 @@ void CScene::onInit()
 	m_rScore.top = 280;
 	m_rScore.right = 620; 
 	m_rScore.bottom = 550;
+	// 平滑游戏控制
+	m_input->KeepKeyState(VK_LEFT, true);
+	m_input->KeepKeyState(VK_RIGHT, true);
+	m_input->KeepKeyState(VK_DOWN, true);
+
+	GetCurrentDirectory(MAX_PATH, m_strCurrent);
+	if (GetFileAttributes("saves\\") == -1) 
+		_mkdir("saves\\"); 
+	strcat_s(m_strCurrent, "\\saves\\");
+	SetCurrentDirectory(m_strCurrent);
+	strcat_s(m_strCurrent, "*");
+
 	NewGame();
 }
 
@@ -84,11 +96,12 @@ void CScene::InitParams()
 		m_score += "\n\nGame Over\nPress N to Start\nPress S to Save";
 		m_score += "\nPress L to Load\nPress Q to Quit";
 	} else {
-		m_bPaused = m_bDown = false; 
+		m_bLoad = m_bPaused = m_bDown = false; 
 		m_mask = 0xffffffff;
 		m_iAdjust = 0;
 		m_iPY = SCENE_HEIGHT;
 		m_bUpdate = true;
+		m_iKeyTime = KEY_INTERVAL;
 	}
 }
 
@@ -105,7 +118,6 @@ void CScene::NextTile()
 	m_iY = 1;
 	m_iTime = DROP_INTERVAL;
 	m_bUpdate = true;
-	m_lLastDown = 0;
 	for (t = 0; m_map[m_iPattern][m_iStatus][t] == 0; t++);
 	m_iY -= t / 4;
 }
@@ -152,19 +164,21 @@ void CScene::onTick(int iElapsedTime)
 	if (m_input->GetKeyState('Q')) PostQuitMessage(0);
 	else if (m_input->GetKeyState('N')) NewGame();
 	else if (m_input->GetKeyState('S')) SaveGame();
-	else if (m_input->GetKeyState('L')) LoadGame();
+	else if (m_input->GetKeyState('L')) LoadSwitch(!m_bLoad);
 	else if (m_input->GetKeyState(VK_ESCAPE)) m_bPaused = !m_bPaused;
-	if (m_bPaused || m_bOver) return;
+	if (m_bPaused || m_bOver || m_bLoad) return;
 	// 左右移动
-	m_iTime -= iElapsedTime;
-	if (m_input->GetKeyState(VK_LEFT) && Test(m_map[m_iPattern][m_iStatus], 
-		m_iX - 1, m_iY, ETO_EMPTY)) {
+	m_iTime -= iElapsedTime; m_iKeyTime -= iElapsedTime;
+	if (m_input->GetKeyState(VK_LEFT) && m_iKeyTime < 0 && 
+		Test(m_map[m_iPattern][m_iStatus], m_iX - 1, m_iY, ETO_EMPTY)) {
 			m_iX--;
 			m_bUpdate = true;
-	} else if (m_input->GetKeyState(VK_RIGHT) && Test(m_map[m_iPattern][m_iStatus], 
-		m_iX + 1, m_iY, ETO_EMPTY)) {
+			m_iKeyTime = KEY_INTERVAL;
+	} else if (m_input->GetKeyState(VK_RIGHT) && m_iKeyTime < 0 && 
+		Test(m_map[m_iPattern][m_iStatus], m_iX + 1, m_iY, ETO_EMPTY)) {
 			m_iX++;
 			m_bUpdate = true;
+			m_iKeyTime = KEY_INTERVAL;
 	}
 	// 方块旋转
 	if (m_input->GetKeyState(VK_SPACE) || m_input->GetKeyState(VK_UP)) {
@@ -187,11 +201,13 @@ void CScene::onTick(int iElapsedTime)
 		}
 	}
 	// 方块下落
-	if (m_iTime < 0 || m_input->GetKeyState(VK_DOWN) && m_iTime < KEY_VALID) {
+	if (m_iTime < 0 || m_input->GetKeyState(VK_DOWN) && m_iKeyTime < 0) {
+		m_iKeyTime = KEY_INTERVAL;
 		// 方块下落一格
-		if (Test(m_map[m_iPattern][m_iStatus], m_iX, m_iY + 1, ETO_EMPTY))
-			m_iY++, m_iTime = DROP_INTERVAL;
-		else {
+		if (Test(m_map[m_iPattern][m_iStatus], m_iX, m_iY + 1, ETO_EMPTY)) {
+			m_iY++;
+			m_iTime = DROP_INTERVAL;
+		} else {
 			// 方块落入场景
 			Test(m_map[m_iPattern][m_iStatus], m_iX, m_iY, ETO_DRAW);
 			int x, t, cnt = 0;
@@ -214,7 +230,8 @@ void CScene::onTick(int iElapsedTime)
 			// 下一方块及游戏结束检测
 			NextTile();
 			if (!Test(m_map[m_iPattern][m_iStatus], m_iX, m_iY, ETO_EMPTY)) {
-				m_bOver = true; InitParams();
+				m_bOver = true; 
+				InitParams();
 			}
 		}
 	} else if (m_input->GetKeyInterval(VK_DOWN) < 300) {
@@ -232,14 +249,41 @@ void CScene::onTick(int iElapsedTime)
 	}
 }
 
+void CScene::LoadSwitch(bool on)
+{
+	m_bLoad = on;
+	m_input->KeepKeyState(VK_UP,    !on);
+	m_input->KeepKeyState(VK_DOWN,  !on);
+	if (!on) return;
+	m_saves.clear();
+
+	WIN32_FIND_DATA file;
+	HANDLE hListFile = FindFirstFile(m_strCurrent, &file);
+	if (hListFile == INVALID_HANDLE_VALUE) return;
+	FindNextFile(hListFile, &file);
+	while (FindNextFile(hListFile, &file)) 
+		m_saves.push_back(file.cFileName);
+	FindClose(hListFile);
+}
+
 
 void CScene::onGUI()
 {
-	if (CGUI::Button("Load", 440, 20, VK_RETURN)) {
-		PostQuitMessage(0);
-	}
-	if (CGUI::Button("Cancel", 440, 80, VK_ESCAPE)) {
-		PostQuitMessage(0);
+	static unsigned cur = 0;
+	static unsigned beg = 0;
+	static SRect rect = { 50, 60, 350, 600 };
+	if (m_bLoad) {
+		if (CGUI::List(&rect, m_saves, cur, beg) || CGUI::Button("Load", 440, 350, VK_RETURN)) {
+			char str[MAX_PATH];
+			strncpy_s(str, MAX_PATH, m_strCurrent, strlen(m_strCurrent) - 1);
+			strcat_s(str, m_saves[cur].c_str());
+			LoadGame(str);
+			LoadSwitch(false);
+		}
+		if (CGUI::Button("Cancel", 440, 410, VK_ESCAPE)) {
+			LoadSwitch(false);
+			m_bPaused = false; // 游戏本体也捕捉ESC事件
+		}
 	}
 }
 
@@ -248,8 +292,9 @@ void CScene::onRender()
 	CSceneManager::getRenderer()->SpriteDraw(m_pBg);
 	SVector vPos = { 0.f, 0.f, 0.f };
 	// 暂停界面
-	if (m_bPaused && !m_bOver) {
+	if (m_bPaused && !m_bOver || m_bLoad) {
 		static char str[8] = "Pause";
+		static char strL[16] = "Loading...";
 		for (int x = 0; m_pPool[x][0] >= 0; x++) {
 			vPos.x = 50.f + x * 25;
 			for (int y = 1; m_pPool[x][y] >= 0; y++) {
@@ -258,7 +303,7 @@ void CScene::onRender()
 					m_color[((x+5) * (y+3)) % 7 + 1] & 0x4fffffff);
 			}
 		}
-		CSceneManager::getRenderer()->SpriteDrawText(str, &m_rScore, DT_CENTER);
+		CSceneManager::getRenderer()->SpriteDrawText(m_bLoad? strL : str, &m_rScore, DT_CENTER);
 		return;
 	}
 	// 预计下落位置
@@ -301,10 +346,8 @@ void CScene::onRender()
 
 void CScene::SaveGame() {
 	std::ostringstream oss;
-	if (GetFileAttributes("saves\\") == -1) 
-		_mkdir("saves\\"); 
 	if (GetAsyncKeyState(VK_SHIFT) & 0x8000) {
-		oss << "saves\\" << m_iScore << "_" << m_iLines << "_" << timeGetTime() << ".tsf";
+		oss << m_iScore << "_" << m_iLines << "_" << timeGetTime() << ".tsf";
 		FILE* file = 0;
 		fopen_s(&file, oss.str().c_str(), "wb");
 		fwrite(&m_iScore, sizeof(int), 1, file);
@@ -378,7 +421,7 @@ void CScene::SaveGame() {
 	doc.InsertEndChild(node);
 
 	oss.str("");
-	oss << "saves\\" << m_iScore << "_" << m_iLines << "_" << timeGetTime();
+	oss << m_iScore << "_" << m_iLines << "_" << timeGetTime();
 
 	if (GetAsyncKeyState(VK_CONTROL) & 0x8000) oss << ".xml";
 	else oss << ".tst";
@@ -386,19 +429,7 @@ void CScene::SaveGame() {
 	doc.SaveFile(oss.str().c_str());
 }
 
-void CScene::LoadGame() {
-	char str[64];
-	OPENFILENAME ofn;
-	ZeroMemory(&ofn, sizeof(ofn));
-	ofn.lStructSize = sizeof(ofn);
-	ofn.lpstrFile = str;
-	ofn.lpstrFile[0] = '\0';
-	ofn.lpstrFilter = TEXT("Tetris Save File\0*.xml;*.tsf;*.tst\0");
-	ofn.lpstrInitialDir = TEXT(".\\");
-	ofn.nMaxFile = MAX_PATH;
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-	if (!GetOpenFileName(&ofn)) return;
-
+void CScene::LoadGame(const char* str) {
 	if (str[strlen(str)-1] == 'f') {
 		FILE* file = 0;
 		fopen_s(&file, str, "rb");

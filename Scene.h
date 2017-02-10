@@ -4,7 +4,7 @@
 #define SCENE_WIDTH 12		// 场景宽度
 #define SCENE_HEIGHT 22		// 场景高度
 #define DROP_INTERVAL 800	// 倒计时上限
-#define KEY_VALID 650		// 倒计时在此上限内按键有效
+#define KEY_INTERVAL 150	// 按键有效间隔
 
 enum ETestOperation {
 	ETO_EMPTY,				 // 简单碰撞检测
@@ -26,17 +26,17 @@ public:
 	inline void OnSetFocus() { if (m_bLost) { m_bPaused = false; m_bLost = false; } }
 	void NewGame();
 	void SaveGame();
-	void LoadGame();
+	void LoadGame(const char* str);
 private:
 	// For Simulation
 	bool Test(int sp[], int x, int y, int c);
 	int FullCollision(int sp[], int x, int y);
 	void NextTile();
 	void InitParams();
+	void LoadSwitch(bool on);
 	int m_pool[SCENE_WIDTH+2][SCENE_HEIGHT+2], (*m_pPool)[SCENE_HEIGHT+2], m_map[8][4][16];
 	int m_iX, m_iY, m_iPY, m_iPattern, m_iStatus, m_iTime, m_iNextP, m_iNextS;
-	int m_iAdjust, m_iScore, m_iLines, m_pBg, m_pTile;
-	unsigned long m_lLastDown;
+	int m_iAdjust, m_iScore, m_iLines, m_pBg, m_pTile, m_iKeyTime;
 	bool m_bPaused, m_bLost, m_bOver, m_bUpdate, m_bDown;
 
 	// For Rendering
@@ -50,5 +50,10 @@ private:
 	std::string m_score;
 	CInput* m_input;
 	unsigned long m_color[8], m_mask;
+
+	// For Save & Load
+	bool m_bLoad;
+	std::vector<std::string> m_saves;
+	char m_strCurrent[MAX_PATH];
 };
 #endif
