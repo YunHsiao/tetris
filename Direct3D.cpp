@@ -1,11 +1,12 @@
 #include "Utility.h"
 #include "Direct3D.h"
 
-CDirect3D::CDirect3D():
-m_pDirect3D9(NULL),
-m_pD3D9Device(NULL),
-m_pSprite(NULL),
-m_pFont(NULL)
+CDirect3D::CDirect3D()
+	:m_pDirect3D9(0)
+	,m_pD3D9Device(0)
+	,m_pSprite(0)
+	,m_pFont(0)
+	,m_bD3DFont(false)
 {
 }
 
@@ -18,6 +19,8 @@ CDirect3D::~CDirect3D()
 	for (auto it(m_vTextures.begin()); it != m_vTextures.end(); it++)
 		Safe_Release(*it);
 	RemoveFontResource(TEXT("ITCKRIST.TTF"));
+	m_vTextures.clear();
+	m_vSize.clear();
 }
 
 bool CDirect3D::onInit()
@@ -71,19 +74,68 @@ bool CDirect3D::onInit()
 		return false;
 
 	AddFontResource(TEXT("ITCKRIST.TTF"));
-	if (FAILED(hr = D3DXCreateFont(m_pD3D9Device, 30, 0, FW_DONTCARE, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+	if (FAILED(hr = D3DXCreateFont(m_pD3D9Device, 33, 0, FW_DONTCARE, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
 		DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Kristen ITC"), &m_pFont)))
 			return false;
 	if (FAILED(hr = D3DXCreateSprite(m_pD3D9Device, &m_pSprite))) 
 		return false;
+
+	FT_Face face;
+	FT_Library library;
+	if (FT_Init_FreeType(&library)) 
+		return false;
+	if (FT_New_Face(library, "ITCKRIST.TTF", 0, &face)) 
+		return false;
+	FT_Set_Char_Size(face, FONT_SIZE << 6, FONT_SIZE << 6, 96, 96);
+
+	for (unsigned char i = 0; i < 128; i++) {
+		if (FT_Load_Glyph(face, FT_Get_Char_Index(face, i), FT_LOAD_DEFAULT))
+			return false;
+		FT_Glyph glyph;
+		if (FT_Get_Glyph(face->glyph, &glyph))
+			return false;
+
+		FT_Glyph_To_Bitmap(&glyph, FT_RENDER_MODE_NORMAL, 0, 1);
+		FT_Bitmap& bitmap = ((FT_BitmapGlyph)glyph)->bitmap;
+
+		m_xoff[i] = (float) (face->glyph->advance.x >> 6);
+		CreateTexture(bitmap.buffer, bitmap.width, bitmap.rows);
+		FT_Done_Glyph(glyph);
+	}
+
+	FT_Done_Face(face);
+	FT_Done_FreeType(library);
 
 	return true;
 }
 
 void CDirect3D::SpriteDrawText(const char* strText, SRect* rect, int Format, unsigned long color)
 {
+	if (GetAsyncKeyState(VK_F7) & 0x8000) m_bD3DFont = true;
+	if (GetAsyncKeyState(VK_F8) & 0x8000) m_bD3DFont = false;
 	if (!m_pFont || !strText) return;
-	m_pFont->DrawTextA(m_pSprite, strText, -1, rect?reinterpret_cast<RECT*>(rect):&m_rWnd, Format, color);
+	if (m_bD3DFont) {
+		m_pFont->DrawTextA(m_pSprite, strText, -1, 
+			rect?reinterpret_cast<RECT*>(rect):&m_rWnd, Format, color);
+		return;
+	}
+
+	std::vector<float> len;
+	CountLines(strText, len);
+
+	SVector p = { 0.f, 0.f, 0.f };
+	RECT* rct = rect ? reinterpret_cast<RECT*>(rect) : &m_rWnd;
+	for (unsigned line = 0; line < len.size(); line++, strText++) {
+		TextPosition(&p, len.data(), len.size(), rct, Format, line);
+		while (*strText && *strText != '\n') {
+			size_t index = *strText;
+			p.y -= m_vSize[index].y / 2 + 10;
+			if (index != ' ') SpriteDraw(index, &p, color);
+			p.y += m_vSize[index].y / 2 + 10;
+			p.x += m_xoff[index];
+			strText++;
+		}
+	}
 }
 
 void CDirect3D::SpriteDraw(size_t pTexture, const SVector* pPosition, unsigned long color)
@@ -110,20 +162,56 @@ void CDirect3D::PostRender()
 	
 	m_pSprite->End();
 	m_pD3D9Device->EndScene();
-	m_pD3D9Device->Present(NULL, NULL, NULL, NULL);
+	m_pD3D9Device->Present(0, 0, 0, 0);
 }
 
-size_t CDirect3D::CreateTexture(const char* pSrcFile) {
+size_t CDirect3D::CreateTexture(const char* pSrcFile) 
+{
 	if (!m_pD3D9Device)
 		return -1;
 
-	IDirect3DTexture9* pTex = NULL;
+	IDirect3DTexture9* pTex;
 	if (FAILED(D3DXCreateTextureFromFileExA(m_pD3D9Device,
-		pSrcFile,D3DX_DEFAULT_NONPOW2,D3DX_DEFAULT_NONPOW2,
-		1,0,D3DFMT_UNKNOWN,D3DPOOL_MANAGED,
-		D3DX_FILTER_LINEAR,D3DX_FILTER_NONE,0,NULL,NULL,
+		pSrcFile, D3DX_DEFAULT_NONPOW2, D3DX_DEFAULT_NONPOW2,
+		1, 0, D3DFMT_UNKNOWN,D3DPOOL_MANAGED,
+		D3DX_FILTER_LINEAR, D3DX_FILTER_NONE, 0, 0, 0,
 		&pTex))) 
 		return -1;
+
+	D3DSURFACE_DESC surfDesc;
+	pTex->GetLevelDesc(0, &surfDesc);
+	SPoint pt;
+	pt.x = surfDesc.Width;
+	pt.y = surfDesc.Height;
+	m_vSize.push_back(pt);
+	m_vTextures.push_back(pTex);
+	return m_vTextures.size() - 1;
+}
+
+size_t CDirect3D::CreateTexture(unsigned char *image, unsigned w, unsigned h) 
+{
+	if (!m_pD3D9Device)
+		return -1;
+
+	IDirect3DTexture9* pTex;
+	D3DXCreateTexture(m_pD3D9Device, w, h, 1, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, &pTex);
+	D3DLOCKED_RECT pValue; 
+	unsigned int* pColor;
+	pTex->LockRect(0, &pValue, 0, D3DLOCK_DISCARD);
+	pColor = (unsigned int*) pValue.pBits;
+	unsigned t;
+	for(unsigned i = 0; i < h; i++) {
+		for(unsigned j = 0; j < w; j++) {
+			t = i * w + j;
+			pColor[t] = (image[t] << 16) + (image[t] << 8) + image[t];
+			pColor[t] += image[t] ? 0xff000000 : 0;
+		}
+	}
+	pTex->UnlockRect(0);
+	SPoint pt;
+	pt.x = w;
+	pt.y = h;
+	m_vSize.push_back(pt);
 	m_vTextures.push_back(pTex);
 	return m_vTextures.size() - 1;
 }

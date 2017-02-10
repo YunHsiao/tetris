@@ -22,10 +22,14 @@ public:
 	size_t CreateTexture(const char* pSrcFile);
 
 private:
+	size_t CreateTexture(unsigned char *image, unsigned w, unsigned h);
+
 	IDirect3D9* m_pDirect3D9;
 	IDirect3DDevice9* m_pD3D9Device;
 	ID3DXSprite* m_pSprite;
 	ID3DXFont* m_pFont;
+	bool m_bD3DFont;
 	std::vector<IDirect3DTexture9*> m_vTextures;
+	std::vector<SPoint> m_vSize;
 };
 #endif

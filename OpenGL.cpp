@@ -88,15 +88,17 @@ bool COpenGL::onInit()
 		m_xoff[i] = (float) (face->glyph->advance.x >> 6);
 		size_t index = CreateTexture(image.data(), w, h, GL_LUMINANCE_ALPHA);
 
+		float x = (float) bitmap.width / w;
+		float y = (float) bitmap.rows  / h;
 		glNewList(m_font + i, GL_COMPILE);
 		glBindTexture(GL_TEXTURE_2D, m_vTexture[index]);
 		glPushMatrix();
-		glTranslatef(0, -(float)bitmap.rows, 0);
+		glTranslatef(0, (float)bitmap.rows / -2 - 10, 0);
 		glBegin(GL_QUADS);
-		glTexCoord2f(0, 0); glVertex2i(0, 0);
-		glTexCoord2f(1, 0); glVertex2i(w, 0);
-		glTexCoord2f(1, 1); glVertex2i(w, h);
-		glTexCoord2f(0, 1); glVertex2i(0, h);
+		glTexCoord2f(0, 0); glVertex2i(0,			 0);
+		glTexCoord2f(x, 0); glVertex2i(bitmap.width, 0);
+		glTexCoord2f(x, y); glVertex2i(bitmap.width, bitmap.rows);
+		glTexCoord2f(0, y); glVertex2i(0,			 bitmap.rows);
 		glEnd();
 		glPopMatrix();
 		glTranslatef(m_xoff[i], 0, 0);

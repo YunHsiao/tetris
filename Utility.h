@@ -7,6 +7,7 @@
 #define WINDOWS_USEFUL_TOOLS_
 #define _CRT_RAND_S
 #include <stdlib.h>
+#include <xmmintrin.h>
 #include <Windows.h>
 #include <MMSystem.h>
 #include <assert.h>
@@ -78,4 +79,9 @@ struct SPoint
 	long x;
 	long y;
 };
+
+#define SHUFFLE_PARAM(x, y, z, w) \
+	((x) | (y << 2) | (z << 4) | (w << 6))
+#define _mm_repx_ps(v) \
+	_mm_shuffle_ps((v), (v), SHUFFLE_PARAM(0, 0, 0, 0))
 #endif

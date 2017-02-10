@@ -34,6 +34,7 @@ public:
 	virtual void SpriteDraw(size_t pTexture, const SVector* pPosition = 0,
 		unsigned long color = 0xffffffff) = 0;
 	virtual size_t CreateTexture(const char* pSrcFile) = 0;
+
 protected:
 	SVector* TextPosition(SVector* p, float* len, size_t size, RECT* rct, int Format, unsigned line);
 	void CountLines(const char* str, std::vector<float>& len);

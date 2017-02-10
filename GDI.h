@@ -18,12 +18,14 @@ public:
 	size_t CreateTexture(const char* pSrcFile);
 
 private:
-	size_t CreateTexture(unsigned char *image, unsigned w, unsigned h, bool bRGB);
+	size_t CreateTexture(unsigned char *image, unsigned w, unsigned h, bool bRGBA);
 
 	HWND m_hWnd;
-	size_t m_font;
-	std::vector<HDC> m_vDC;
-	std::vector<HBITMAP> m_vTexture;
+	HDC m_DC;
+	HBITMAP m_hb;
+	unsigned *m_framebuffer, m_width, m_height;
+	unsigned char *m_fb;
+	std::vector<unsigned char*> m_vBuffer;
 	std::vector<SPoint> m_vSize;
 };
 #endif
