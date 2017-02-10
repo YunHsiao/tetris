@@ -8,8 +8,6 @@ m_pD3D9Device(NULL),
 m_pSprite(NULL),
 m_pFont(NULL)
 {
-	m_rWnd.left = 0;
-	m_rWnd.top = 0;
 }
 
 CDirect3D::~CDirect3D()
@@ -46,7 +44,27 @@ bool CDirect3D::onInit()
 	// 初始化相关参数
 	D3DPRESENT_PARAMETERS D3DPresentParam;
 	ZeroMemory(&D3DPresentParam, sizeof(D3DPRESENT_PARAMETERS));
-	InitPresentParam(hWnd, lWindowWidth, lWindowHeight, &D3DPresentParam);
+
+	m_rWnd.right = lWindowWidth;
+	m_rWnd.bottom = lWindowHeight;
+
+	D3DDISPLAYMODE d3ddm;
+	m_pDirect3D9->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &d3ddm);
+
+	D3DPresentParam.BackBufferWidth            = lWindowWidth;					// 后台缓冲区的宽度
+	D3DPresentParam.BackBufferHeight           = lWindowHeight;					// 后台缓冲区的高度
+	D3DPresentParam.BackBufferFormat           = d3ddm.Format;					// 后台缓冲区的像素格式
+	D3DPresentParam.BackBufferCount            = 1;								// 后台缓冲区的数量
+	D3DPresentParam.MultiSampleType            = D3DMULTISAMPLE_NONE;			// 多重采样的类型
+	D3DPresentParam.MultiSampleQuality         = 0;								// 多重采样的质量
+	D3DPresentParam.SwapEffect                 = D3DSWAPEFFECT_DISCARD;			// 后台缓冲区的页面置换方式
+	D3DPresentParam.hDeviceWindow              = hWnd;							// 窗口句柄
+	D3DPresentParam.Windowed                   = TRUE;							// 窗口还是全屏
+	D3DPresentParam.EnableAutoDepthStencil     = TRUE;							// 深度与模板缓存
+	D3DPresentParam.AutoDepthStencilFormat     = D3DFMT_D24S8;					// 深度缓存与模板缓存的像素格式
+	D3DPresentParam.Flags                      = 0;								// 附加的特性
+	D3DPresentParam.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;		// 刷新频率
+	D3DPresentParam.PresentationInterval       = D3DPRESENT_INTERVAL_IMMEDIATE;	// 刷新时间间隔(垂直同步)
 
 	hr = m_pDirect3D9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd, vp, &D3DPresentParam, &m_pD3D9Device);
 	if (FAILED(hr))
@@ -68,63 +86,44 @@ bool CDirect3D::onInit()
 
 void CDirect3D::InitPresentParam(HWND hWnd, long lWindowWidth, long lWindowHeight, D3DPRESENT_PARAMETERS* D3DPresentParam)
 {
-	m_rWnd.right = lWindowWidth;
-	m_rWnd.bottom = lWindowHeight;
-
-	D3DDISPLAYMODE d3ddm;
-	m_pDirect3D9->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &d3ddm);
-
-	D3DPresentParam->BackBufferWidth            = lWindowWidth;					// 后台缓冲区的宽度
-	D3DPresentParam->BackBufferHeight           = lWindowHeight;				// 后台缓冲区的高度
-	D3DPresentParam->BackBufferFormat           = d3ddm.Format;					// 后台缓冲区的像素格式
-	D3DPresentParam->BackBufferCount            = 1;							// 后台缓冲区的数量
-	D3DPresentParam->MultiSampleType            = D3DMULTISAMPLE_NONE;			// 多重采样的类型
-	D3DPresentParam->MultiSampleQuality         = 0;							// 多重采样的质量
-	D3DPresentParam->SwapEffect                 = D3DSWAPEFFECT_DISCARD;		// 后台缓冲区的页面置换方式
-	D3DPresentParam->hDeviceWindow              = hWnd;							// 窗口句柄
-	D3DPresentParam->Windowed                   = TRUE;							// 窗口还是全屏
-	D3DPresentParam->EnableAutoDepthStencil     = TRUE;							// 深度与模板缓存
-	D3DPresentParam->AutoDepthStencilFormat     = D3DFMT_D24S8;					// 深度缓存与模板缓存的像素格式
-	D3DPresentParam->Flags                      = 0;							// 附加的特性
-	D3DPresentParam->FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;		// 刷新频率
-	D3DPresentParam->PresentationInterval       = D3DPRESENT_INTERVAL_IMMEDIATE;// 刷新时间间隔(垂直同步)
 }
 
-void CDirect3D::DrawText(const char* strText, SRect* rect, unsigned long Format, unsigned long color)
+void CDirect3D::SpriteDrawText(const char* strText, SRect* rect, int Format, unsigned long color)
 {
 	if (!m_pFont || !strText) return;
 	m_pFont->DrawTextA(m_pSprite, strText, -1, rect?reinterpret_cast<RECT*>(rect):&m_rWnd, Format, color);
 }
 
-void CDirect3D::SpriteDraw(unsigned int pTexture, const SVector* pPosition, unsigned long Color) 
+void CDirect3D::SpriteDraw(unsigned int pTexture, const SVector* pPosition, unsigned long color) 
 {
 	if (!m_pSprite || m_vTextures.size() <= pTexture) return;
-	m_pSprite->Draw(m_vTextures[pTexture], 0, 0, reinterpret_cast<const D3DXVECTOR3*>(pPosition), Color);
+	m_pSprite->Draw(m_vTextures[pTexture], 0, 0, reinterpret_cast<const D3DXVECTOR3*>(pPosition), color);
 }
 
-void CDirect3D::PreRender(DWORD flag)
+void CDirect3D::PreRender()
 {
 	if (NULL == m_pD3D9Device)
 		return;
 
-	m_pD3D9Device->Clear(0, NULL, flag, 0xff000000, 1.0f, 0);
+	m_pD3D9Device->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | D3DCLEAR_STENCIL, 
+		0xff000000, 1.0f, 0);
 	m_pD3D9Device->BeginScene();
 	m_pSprite->Begin(D3DXSPRITE_ALPHABLEND);
 }
 
-HRESULT CDirect3D::PostRender()
+void CDirect3D::PostRender()
 {
 	if (!m_pD3D9Device || !m_pSprite)
-		return E_FAIL;
+		return;
 	
 	m_pSprite->End();
 	m_pD3D9Device->EndScene();
-	return m_pD3D9Device->Present(NULL, NULL, NULL, NULL);
+	m_pD3D9Device->Present(NULL, NULL, NULL, NULL);
 }
 
 unsigned int CDirect3D::CreateTexture(const char* pSrcFile) {
 	if (!m_pD3D9Device)
-		return E_FAIL;
+		return -1;
 
 	IDirect3DTexture9* pTex = NULL;
 	if (FAILED(D3DXCreateTextureFromFileExA(m_pD3D9Device,

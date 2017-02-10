@@ -1,6 +1,7 @@
 #include "Utility.h"
 #include "Scene.h"
-#include "Renderer.h"
+#include "SceneManager.h"
+#include <direct.h>
 
 CScene::CScene() 
 {
@@ -12,8 +13,9 @@ CScene::~CScene()
 
 void CScene::onInit() {
 	UINT t; rand_s(&t);	m_iNextP = t % 7 + 1; m_iNextS = t % 4;
-	int sp[8][4] = {{15,4369},{23,785,116,547},{71,275,113,802},
-					{39,305,114,562},{54,561},{99,306},{51,51},{-1}};
+	int sp[8][4] = {{0xf00, 0x4444}, {0x740, 0x622, 0x170, 0x446}, 
+					{0x710, 0x226, 0x470, 0x644}, {0xe40, 0x4c40, 0x4e00, 0x4640}, 
+					{0x6c0, 0x4620}, {0xc60, 0x2640}, {0x660, 0x660}, {-1}};
 	m_color[1] = 0xffd38047; m_color[2] = 0xffd3b047; m_color[3] = 0xff404094;
 	m_color[4] = 0xff2d8677; m_color[5] = 0xff5e388f; m_color[6] = 0xffb03b72;
 	m_color[7] = 0xff8fc241; m_color[0] = 0xffd3c647; // Hue 25-285 Dist 50 Base D38047
@@ -26,10 +28,10 @@ void CScene::onInit() {
 				m_map[j][i][b] = (sp[j-1][i] & 1) * j, sp[j-1][i] >>= 1;
 	memset(m_pool, -1, sizeof(m_pool));
 
-	m_pBg = CRenderer::getInstance()->CreateTexture("bg.png");
-	m_pTile = CRenderer::getInstance()->CreateTexture("tile.png");
-	m_rScore.left = 415; m_rScore.top = 300;
-	m_rScore.right = 585; m_rScore.bottom = 550;
+	m_pBg = CSceneManager::getRenderer()->CreateTexture("bg.bmp");
+	m_pTile = CSceneManager::getRenderer()->CreateTexture("tile.bmp");
+	m_rScore.left = 380; m_rScore.top = 280;
+	m_rScore.right = 620; m_rScore.bottom = 550;
 	NewGame();
 }
 
@@ -46,7 +48,8 @@ void CScene::InitParams() {
 	UpdateScore(); 
 	if (m_bOver) {
 		m_mask = 0x7fffffff;
-		m_score += "\n\nGame Over\nPress N to Start\nPress S to Save\nPress L to Load";
+		m_score += "\n\nGame Over\nPress N to Start\nPress S to Save\n\
+				   Press L to Load\nPress Q to Quit";
 	} else {
 		m_bPaused = m_bDown = false; 
 		m_mask = 0xffffffff;
@@ -61,10 +64,12 @@ void CScene::NextTile() {
 	UINT t;
 	m_iPattern = m_iNextP; m_iStatus = m_iNextS;
 	rand_s(&t);	m_iNextP = t % 7 + 1; m_iNextS = t % 4;
-	m_iX = (SCENE_WIDTH - 2) / 2; m_iY = 1;
+	m_iX = (SCENE_WIDTH - 4) / 2; m_iY = 1;
 	m_iTime = DROP_INTERVAL;
 	m_bUpdate = true;
 	m_lLastDown = 0;
+	for (t = 0; m_map[m_iPattern][m_iStatus][t] == 0; t++);
+	m_iY -= t / 4;
 }
 
 bool CScene::Test(int sp[], int x, int y, int c) {
@@ -126,7 +131,7 @@ void CScene::onTick(int iElapsedTime) {
 }
 
 void CScene::onRender() {
-	CRenderer::getInstance()->SpriteDraw(m_pBg);
+	CSceneManager::getRenderer()->SpriteDraw(m_pBg);
 	SVector vPos = { 0.f, 0.f, 0.f };
 	if (m_bPaused && !m_bOver) {
 		static char str[8] = "Pause";
@@ -134,31 +139,31 @@ void CScene::onRender() {
 			vPos.x = 50.f + x * 25;
 			for (int y = 1; m_pPool[x][y] >= 0; y++) {
 				vPos.y = 25.f + y * 25;
-				CRenderer::getInstance()->SpriteDraw(m_pTile, &vPos, 
+				CSceneManager::getRenderer()->SpriteDraw(m_pTile, &vPos, 
 					m_color[((x+5) * (y+3)) % 7 + 1] & 0x2fffffff);
 			}
 		}
-		CRenderer::getInstance()->DrawText(str, &m_rScore, DT_CENTER);
+		CSceneManager::getRenderer()->SpriteDrawText(str, &m_rScore, DT_CENTER);
 		return;
 	}
 	Test(m_map[m_iPattern][m_iStatus], m_iX, m_iY, ETO_DRAW);
-	for (int x = 0; m_pPool[x][0] >= 0; x++) {
-		vPos.x = 50.f + x * 25;
-		for (int y = 1; m_pPool[x][y] >= 0; y++) {
-			if (!m_pPool[x][y]) continue;
-			vPos.y = 25.f + y * 25;
-			CRenderer::getInstance()->SpriteDraw(m_pTile, &vPos, 
-				m_color[m_pPool[x][y]] & m_mask);
-		}
-	}
 	int* t = m_map[m_iPattern][m_iStatus];
 	for (int x = 0; x < 4; x++) {
 		vPos.x = 50.f + (m_iX + x) * 25;
 		for (int y = 0; y < 4; y++) {
 			if (!t[y * 4 + x]) continue;
 			vPos.y = 25.f + (m_iPY + y) * 25;
-			CRenderer::getInstance()->SpriteDraw(m_pTile, &vPos, 
+			CSceneManager::getRenderer()->SpriteDraw(m_pTile, &vPos, 
 				m_color[t[y * 4 + x]] & 0x4fffffff);
+		}
+	}
+	for (int x = 0; m_pPool[x][0] >= 0; x++) {
+		vPos.x = 50.f + x * 25;
+		for (int y = 1; m_pPool[x][y] >= 0; y++) {
+			if (!m_pPool[x][y]) continue;
+			vPos.y = 25.f + y * 25;
+			CSceneManager::getRenderer()->SpriteDraw(m_pTile, &vPos, 
+				m_color[m_pPool[x][y]] & m_mask);
 		}
 	}
 	t = m_map[m_iNextP][m_iNextS];
@@ -167,11 +172,11 @@ void CScene::onRender() {
 		for (int y = 0; y < 4; y++) {
 			if (!t[y * 4 + x]) continue;
 			vPos.y = 150.f + y * 25;
-			CRenderer::getInstance()->SpriteDraw(m_pTile, &vPos, 
+			CSceneManager::getRenderer()->SpriteDraw(m_pTile, &vPos, 
 				m_color[t[y * 4 + x]] & m_mask);
 		}
 	}
-	CRenderer::getInstance()->DrawText(m_score.c_str(), &m_rScore, DT_CENTER);
+	CSceneManager::getRenderer()->SpriteDrawText(m_score.c_str(), &m_rScore, DT_CENTER);
 	Test(m_map[m_iPattern][m_iStatus], m_iX, m_iY, ETO_CLEAN);
 }
 
@@ -212,7 +217,8 @@ void CScene::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
 void CScene::SaveGame() {
 	std::ostringstream oss;
-	oss << m_iScore << "_" << m_iLines << "_" << timeGetTime() << ".tsf";
+	_mkdir("saves\\");
+	oss << "saves\\" << m_iScore << "_" << m_iLines << "_" << timeGetTime() << ".tsf";
 
 	FILE* file = 0;
 	fopen_s(&file, oss.str().c_str(), "wb");

@@ -34,6 +34,14 @@ template<typename T>inline void Safe_Delete_Array( T* & p )
 {
 	if(p) { delete[] p; p = NULL; }
 }
+template<typename T>inline void Safe_Delete_Object( T* & p )
+{
+	if(p) { DeleteObject(p); p = NULL; }
+}
+template<typename T>inline void Safe_Delete_DC( T* & p )
+{
+	if(p) { DeleteDC(p); p = NULL; }
+}
 #endif
 
 //-----------STL------------

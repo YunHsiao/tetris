@@ -1,9 +1,14 @@
 #include "Utility.h"
 #include "SceneManager.h"
 #include "Window.h"
-#include "Renderer.h"
+#include "Direct3D.h"
+#include "GDI.h"
 
 CSceneManager CSceneManager::s_director;
+CRenderer* CSceneManager::s_pRenderer = NULL;
+std::string CSceneManager::s_FPS;
+std::string CSceneManager::s_renderer;
+CScene CSceneManager::s_scene;
 
 CSceneManager::CSceneManager()
 {
@@ -11,6 +16,7 @@ CSceneManager::CSceneManager()
 
 CSceneManager::~CSceneManager()
 {
+	Safe_Delete(s_pRenderer);
 }
 
 void CSceneManager::Go() {
@@ -28,7 +34,7 @@ void CSceneManager::Go() {
 			current = timeGetTime();
 			elapsed = current - last;
 			last = current;
-			if (current - lasts >= 1000) lasts = current, m_FPS = toString(cnt), cnt = 0;
+			if (current - lasts >= 1000) lasts = current, s_FPS = toString(cnt), cnt = 0;
 			else cnt++;
 			onTick( elapsed );
 			onRender();
@@ -40,22 +46,26 @@ void CSceneManager::Go() {
 void CSceneManager::onInit() {
 	CWindow::getInstance()->setWinSize(640, 640);
 	CWindow::getInstance()->onInit();
-	CRenderer::getInstance()->onInit();
-	m_scene.onInit();
+	if ((GetAsyncKeyState(VK_CONTROL) & 0x8000))
+		s_pRenderer = new CGDI(), s_renderer = "GDI";
+	else s_pRenderer = new CDirect3D(), s_renderer = "Direct3D";
+	s_pRenderer->onInit();
+	s_scene.onInit();
 	CWindow::getInstance()->showWindow();
 }
 
 void CSceneManager::onTick(int iElapsedTime) {
-	m_scene.onTick(iElapsedTime);
+	s_scene.onTick(iElapsedTime);
 }
 
 void CSceneManager::onRender() {
-	CRenderer::getInstance()->PreRender();
-	m_scene.onRender();
-	CRenderer::getInstance()->DrawText(m_FPS.c_str(), 0, DT_RIGHT);
-	CRenderer::getInstance()->PostRender();
+	s_pRenderer->PreRender();
+	s_scene.onRender();
+	s_pRenderer->SpriteDrawText(s_FPS.c_str(), 0, DT_RIGHT);
+	s_pRenderer->SpriteDrawText(s_renderer.c_str(), 0, DT_LEFT);
+	s_pRenderer->PostRender();
 }
 
 void CSceneManager::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	m_scene.WndProc(hWnd, uMsg, wParam, lParam);
+	s_scene.WndProc(hWnd, uMsg, wParam, lParam);
 }
