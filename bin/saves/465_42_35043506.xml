@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Progress>
+    <Score>465</Score>
+    <Lines>42</Lines>
+    <Over>1</Over>
+</Progress>
+
+<Current>
+    <X>5</X>
+    <Y>1</Y>
+    <Pattern>2</Pattern>
+    <Status>3</Status>
+    <NextPattern>3</NextPattern>
+    <NextStatus>3</NextStatus>
+    <Time>800</Time>
+</Current>
+
+<Pool>
+    <Line>------------</Line>
+    <Line>------------</Line>
+    <Line>------------</Line>
+    <Line>--4---------</Line>
+    <Line>--44--------</Line>
+    <Line>--44--44----</Line>
+    <Line>--444444----</Line>
+    <Line>---6-334----</Line>
+    <Line>--66-3444---</Line>
+    <Line>--6633444---</Line>
+    <Line>--663334277-</Line>
+    <Line>--633433277-</Line>
+    <Line>---34433222-</Line>
+    <Line>--234433222-</Line>
+    <Line>--244433222-</Line>
+    <Line>--22776624--</Line>
+    <Line>--3377-66441</Line>
+    <Line>--3777777461</Line>
+    <Line>77-553322641</Line>
+    <Line>144-23772541</Line>
+    <Line>146-2233-551</Line>
+    <Line>166-33332251</Line>
+    <Line>165-3-3322-1</Line>
+</Pool>

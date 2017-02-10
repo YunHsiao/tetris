@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="ANSI"?>
+<Progress>
+	<Score>390</Score>
+	<Lines>33</Lines>
+	<Over>0</Over>
+</Progress>
+
+<Current>
+	<X>4</X>
+	<Y>0</Y>
+	<Pattern>4</Pattern>
+	<Status>2</Status>
+	<NextPattern>4</NextPattern>
+	<NextStatus>3</NextStatus>
+	<Time>477</Time>
+</Current>
+
+<Pool>
+	<Line>------------</Line>
+	<Line>------------</Line>
+	<Line>------------</Line>
+	<Line>------------</Line>
+	<Line>------------</Line>
+	<Line>-4---4------</Line>
+	<Line>-44-444-66--</Line>
+	<Line>145-22---66-</Line>
+	<Line>1455-2----77</Line>
+	<Line>144522166-77</Line>
+	<Line>26-554417777</Line>
+	<Line>-55554552111</Line>
+	<Line>77443-4-5111</Line>
+	<Line>-77434445511</Line>
+	<Line>177775553-42</Line>
+	<Line>177-66555442</Line>
+	<Line>177-4662544-</Line>
+	<Line>17744442444-</Line>
+	<Line>177-444774-1</Line>
+	<Line>377-22224411</Line>
+	<Line>333-22324411</Line>
+	<Line>-23333334611</Line>
+	<Line>126632-36611</Line>
+</Pool>

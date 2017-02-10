@@ -55,7 +55,7 @@ bool COpenGL::onInit()
 	FT_Library library;
 	if (FT_Init_FreeType(&library)) 
 		return false;
-	if (FT_New_Face(library, "ITCKRIST.TTF", 0, &face)) 
+	if (FT_New_Face(library, TRS_FONT_FILE, 0, &face)) 
 		return false;
 
 	FT_Set_Char_Size(face, FONT_SIZE << 6, FONT_SIZE << 6, 96, 96);
@@ -82,7 +82,7 @@ bool COpenGL::onInit()
 				if (i < bitmap.width && j < bitmap.rows) 
 					c = bitmap.buffer[j * bitmap.width + i];
 				image.push_back(c);
-				image.push_back(c ? 0xff : 0);
+				image.push_back(c/* ? 0xff : 0*/);
 			}
 		}
 		m_xoff[i] = (float) (face->glyph->advance.x >> 6);
@@ -93,7 +93,9 @@ bool COpenGL::onInit()
 		glNewList(m_font + i, GL_COMPILE);
 		glBindTexture(GL_TEXTURE_2D, m_vTexture[index]);
 		glPushMatrix();
-		glTranslatef(0, (float)bitmap.rows / -2 - 10, 0);
+		//glTranslatef((float) ((FT_BitmapGlyph)glyph)->top,0,0);
+		//glTranslatef(0, (float) (((FT_BitmapGlyph)glyph)->top) - bitmap.rows, 0);
+		glTranslatef(0, bitmap.rows / -2.f - 10, 0);
 		glBegin(GL_QUADS);
 		glTexCoord2f(0, 0); glVertex2i(0,			 0);
 		glTexCoord2f(x, 0); glVertex2i(bitmap.width, 0);

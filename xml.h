@@ -21,12 +21,12 @@ public:
 	virtual XMLDocument* ToDocument() { return 0; }
 	virtual XMLDeclaration* ToDeclaration() { return 0; }
 
+	void _setText(char* str);
 	void _setDocument(XMLDocument* _doc) { doc = _doc; }
 	XMLDocument* _getDocument() { return doc; }
 	XMLElement* _getParent() { return parent; }
 	void _setValue(char* v) { Safe_Delete_Array(value); value = v; }
 	const char* _getValue() const { return value; }
-	void _setText(char* str);
 	void _updateLength(int _chars, int _lines) { chars += _chars; lines += _lines; }
 
 protected:

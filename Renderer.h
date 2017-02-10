@@ -4,19 +4,7 @@
 #include "Window.h"
 #include "ft2build.h"
 #include FT_GLYPH_H
-#ifndef _WIN64
-#ifdef _DEBUG
-#pragma comment(lib,"freetype27d.lib")
-#else
-#pragma comment(lib,"freetype27.lib")
-#endif
-#else
-#ifdef _DEBUG
-#pragma comment(lib,"freetype27d_64.lib")
-#else
-#pragma comment(lib,"freetype27_64.lib")
-#endif
-#endif
+#pragma comment(lib,"lib\\freetype27.lib")
 
 #define FONT_SIZE 18
 

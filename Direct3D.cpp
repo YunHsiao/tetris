@@ -18,7 +18,7 @@ CDirect3D::~CDirect3D()
 	Safe_Release(m_pDirect3D9);
 	for (auto it(m_vTextures.begin()); it != m_vTextures.end(); it++)
 		Safe_Release(*it);
-	RemoveFontResource(TEXT("ITCKRIST.TTF"));
+	RemoveFontResource(TEXT(TRS_FONT_FILE));
 	m_vTextures.clear();
 	m_vSize.clear();
 }
@@ -73,9 +73,9 @@ bool CDirect3D::onInit()
 	if (FAILED(hr))
 		return false;
 
-	AddFontResource(TEXT("ITCKRIST.TTF"));
+	AddFontResource(TEXT(TRS_FONT_FILE));
 	if (FAILED(hr = D3DXCreateFont(m_pD3D9Device, 33, 0, FW_DONTCARE, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
-		DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Kristen ITC"), &m_pFont)))
+		DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT(TRS_FONT_NAME), &m_pFont)))
 			return false;
 	if (FAILED(hr = D3DXCreateSprite(m_pD3D9Device, &m_pSprite))) 
 		return false;
@@ -84,7 +84,7 @@ bool CDirect3D::onInit()
 	FT_Library library;
 	if (FT_Init_FreeType(&library)) 
 		return false;
-	if (FT_New_Face(library, "ITCKRIST.TTF", 0, &face)) 
+	if (FT_New_Face(library, TRS_FONT_FILE, 0, &face)) 
 		return false;
 	FT_Set_Char_Size(face, FONT_SIZE << 6, FONT_SIZE << 6, 96, 96);
 
@@ -204,7 +204,8 @@ size_t CDirect3D::CreateTexture(unsigned char *image, unsigned w, unsigned h)
 		for(unsigned j = 0; j < w; j++) {
 			t = i * w + j;
 			pColor[t] = (image[t] << 16) + (image[t] << 8) + image[t];
-			pColor[t] += image[t] ? 0xff000000 : 0;
+			pColor[t] += (image[t] << 24);
+			//pColor[t] += image[t] ? 0xff000000 : 0;
 		}
 	}
 	pTex->UnlockRect(0);

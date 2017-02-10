@@ -24,13 +24,13 @@ void CScene::onInit()
 	m_iNextS = t % 4;
 
 	// 七种基本体
-	int primes[8][4] = {{0xf00, 0x4444}, 
-					{0x740, 0x622, 0x170, 0x446}, 
-					{0x710, 0x226, 0x470, 0x644}, 
-					{0xe40, 0x4c40, 0x4e00, 0x4640}, 
-					{0x6c0, 0x4620}, 
-					{0xc60, 0x2640}, 
-					{0x660, 0x660}, 
+	int primes[8][4] = {{ 0xf00, 0x4444 }, 
+					{ 0xe80, 0xc440, 0x2e00, 0x4460 }, 
+					{ 0xe20, 0x44c0, 0x8e00, 0x6440 }, 
+					{ 0xe40, 0x4c40, 0x4e00, 0x4640 }, 
+					{ 0x6c0, 0x4620 }, 
+					{ 0xc60, 0x2640 }, 
+					{ 0x660, 0x660 }, 
 					{-1}};
 
 	// Hue 25-285 Dist 50 Base D38047
@@ -62,12 +62,12 @@ void CScene::onInit()
 	// - - - -		- - 1 -		- - - -		- - 1 - 
 	// 
 	// m_map[2]:
-	// - - - -		- 2 - -		- - - -		- 2 2 -  
-	// - - 2 -		- 2 - -		2 2 2 -		- - 2 -  
-	// 2 2 2 -		- 2 2 -		2 - - -		- - 2 - 
-	// - - - -		- - - -		- - - -		- - - - 
+	// - - - -		- - - -		- - - -		- - - -  
+	// - - - 2		- - 2 -		- - - -		- 2 2 -  
+	// - 2 2 2		- - 2 -		- 2 2 2		- - 2 - 
+	// - - - -		- - 2 2		- 2 - -		- - 2 - 
 	// 
-	// ...
+	// ... (primes.xlsx)
 	// 
 
 	for (int i = 1; i < 8; i++)
@@ -93,10 +93,12 @@ void CScene::onInit()
 	m_pPool = &m_pool[1];
 	memset(m_pool, -1, sizeof(m_pool));
 	memset(m_poolPreview, -1, sizeof(m_pool));
+	for (int i = 1; i < SCENE_WIDTH + 1; i++)
+		memset(&m_poolPreview[i][1], 0, sizeof(char) * SCENE_HEIGHT);
 
-	m_pBg = CSceneManager::getRenderer()->CreateTexture("bg.png");
-	m_pTile = CSceneManager::getRenderer()->CreateTexture("tile.png");
-	m_pTilePreview = CSceneManager::getRenderer()->CreateTexture("preview.png");
+	m_pBg = CSceneManager::getRenderer()->CreateTexture(TRS_TEXTURE_BG);
+	m_pTile = CSceneManager::getRenderer()->CreateTexture(TRS_TEXTURE_TILE);
+	m_pTilePreview = CSceneManager::getRenderer()->CreateTexture(TRS_TEXTURE_PREVIEW);
 	m_rScore.left = 380; 
 	m_rScore.top = 280;
 	m_rScore.right = 620; 
@@ -308,9 +310,10 @@ void CScene::LoadSwitch(bool on)
 	for (std::multimap<int, std::string>::iterator it(saves.begin()); it != saves.end(); it++)
 		m_saves.push_back(it->second);
 	FindClose(hListFile);
+	if (!m_saves.size()) return;
 	strncpy_s(m_filePath, MAX_PATH, m_strCurrent, strlen(m_strCurrent) - 1);
 	strcat_s(m_filePath, m_saves[m_iCur].c_str());
-	LoadGame(m_filePath, false);
+	LoadGame(m_filePath, false); 
 }
 
 
@@ -325,8 +328,10 @@ void CScene::onGUI()
 			LoadGame(m_filePath, false);
 		}
 		if (bEvent || CGUI::Button("Load", 440, 350, VK_RETURN)) {
-			LoadGame(m_filePath, true);
-			LoadSwitch(false);
+			if (m_saves.size()) {
+				LoadGame(m_filePath, true);
+				LoadSwitch(false);
+			}
 		}
 		if (CGUI::Button("Cancel", 440, 410, VK_ESCAPE)) {
 			LoadSwitch(false);
@@ -412,6 +417,7 @@ void CScene::onRender()
 }
 
 void CScene::SaveGame() {
+	//long long va(toNumber(L"  \t  \n\t0x1e2b4f\t  \t\n "));
 	std::ostringstream oss;
 	if (GetAsyncKeyState(VK_SHIFT) & 0x8000) {
 		oss << m_iScore << "_" << m_iLines << "_" << timeGetTime() << ".tsf";
@@ -513,20 +519,12 @@ void CScene::LoadGame(const char* str, bool official) {
 			fread_s(&m_iTime, sizeof(int), sizeof(int), 1, file);
 			fread_s(&m_pool, sizeof(m_pool), sizeof(m_pool), 1, file);
 			fclose(file);
-			//for (int i = 0; i < SCENE_WIDTH + 2; i++) 
-			//	m_pool[i][SCENE_HEIGHT + 1] = -1;
-			//for (int i = 0; i < SCENE_HEIGHT + 2; i++) 
-			//	m_pool[0][i] = m_pool[SCENE_WIDTH + 1][i] = -1;
 		} else {
 			fseek(file, sizeof(int) * 9 + sizeof(bool), SEEK_SET);
 			fread_s(&m_poolPreview, sizeof(m_poolPreview), sizeof(m_pool), 1, file);
 			fclose(file);
 			for (int i = 0; i < SCENE_WIDTH + 2; i++) 
 				m_poolPreview[i][0] = -1;
-			//for (int i = 0; i < SCENE_WIDTH + 2; i++) 
-			//	m_poolPreview[i][SCENE_HEIGHT + 1] = m_poolPreview[i][0] = -1;
-			//for (int i = 0; i < SCENE_HEIGHT + 2; i++) 
-			//	m_poolPreview[0][i] = m_poolPreview[SCENE_WIDTH + 1][i] = -1;
 			return;
 		}
 	} else {

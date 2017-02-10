@@ -19,9 +19,9 @@ void CGUI::onInit()
 	s_pCur = s_input->GetMouseCurrentPos();
 	s_pDown = s_input->GetMouseDownPos();
 	s_pUp = s_input->GetMouseUpPos();
-	s_pButton[0] = CSceneManager::getRenderer()->CreateTexture("button0.png");
-	s_pButton[1] = CSceneManager::getRenderer()->CreateTexture("button1.png");
-	s_pButton[2] = CSceneManager::getRenderer()->CreateTexture("button2.png");
+	s_pButton[0] = CSceneManager::getRenderer()->CreateTexture(TRS_TEXTURE_BUTTON0);
+	s_pButton[1] = CSceneManager::getRenderer()->CreateTexture(TRS_TEXTURE_BUTTON1);
+	s_pButton[2] = CSceneManager::getRenderer()->CreateTexture(TRS_TEXTURE_BUTTON2);
 }
 
 bool CGUI::Button(const char* str, short x, short y, unsigned hotkey)
@@ -61,8 +61,9 @@ bool CGUI::InRect(const SRect* rect, const POINTS* p)
 
 bool CGUI::List(const SRect* rect, std::vector<std::string>& v, unsigned& cur, unsigned& beg, bool& bEvent)
 {
-	bool bChanged = false;
 	size_t cnt = v.size();
+	if (!cnt) return false;
+	bool bChanged = false;
 	unsigned visible = (rect->bottom - rect->top) / LIST_ITEM_HEIGHT;
 
 	if (s_input->GetKeyState(VK_UP)) {

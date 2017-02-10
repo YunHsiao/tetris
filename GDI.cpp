@@ -41,7 +41,7 @@ bool CGDI::onInit()
 	FT_Library library;
 	if (FT_Init_FreeType(&library)) 
 		return false;
-	if (FT_New_Face(library, "ITCKRIST.TTF", 0, &face)) 
+	if (FT_New_Face(library, TRS_FONT_FILE, 0, &face)) 
 		return false;
 	FT_Set_Char_Size(face, FONT_SIZE << 6, FONT_SIZE << 6, 96, 96);
 
@@ -156,7 +156,7 @@ size_t CGDI::CreateTexture(unsigned char *image, unsigned w, unsigned h, bool bR
 			for (unsigned j = 0; j < w; j++) {
 				t = i * w * 4 + j * 4;
 				ptr[t] = ptr[t + 1] = ptr[t + 2] = image[i * w + j];
-				ptr[t + 3] = ptr[t] ? 0xff : 0;
+				ptr[t + 3] = ptr[t];// ? 0xff : 0;
 			}
 		}
 	}

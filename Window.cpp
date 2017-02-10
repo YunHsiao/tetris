@@ -23,7 +23,7 @@ void CWindow::onInit()
 	m_wc.cbWndExtra = 0;
 	m_wc.hbrBackground = (HBRUSH)GetStockObject(LTGRAY_BRUSH);
 	m_wc.hCursor = LoadCursor(0, IDC_ARROW);
-	m_wc.hIcon = (HICON) LoadImage(NULL, TEXT("tetris.ico"), IMAGE_ICON, 
+	m_wc.hIcon = (HICON) LoadImage(NULL, TEXT("res\\tetris.ico"), IMAGE_ICON, 
 		0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED);
 	m_wc.hInstance = (HINSTANCE)GetModuleHandle(NULL);
 	m_wc.lpfnWndProc = WndProc;
