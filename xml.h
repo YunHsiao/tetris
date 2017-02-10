@@ -10,6 +10,7 @@ public:
 	virtual ~XMLElement();
 	void SetText(int v);
 	void SetText(const char* v);
+	void SetText(const char* v, int len);
 	const char* GetText() const;
 	XMLElement* InsertFirstChild(XMLElement* addThis);
 	XMLElement* InsertEndChild(XMLElement* addThis);
@@ -53,6 +54,7 @@ public:
 
 	XMLDeclaration* NewDeclaration();
 	XMLElement* NewElement(const char* name);
+	XMLElement* NewElement(const char* name, int len);
 	int SaveFile(const char* filename);
 	int LoadFile(const char* filename);
 	XMLDocument* ToDocument() { return this; }
@@ -60,6 +62,10 @@ public:
 
 private:
 	void Write(XMLElement* node, char*& str, int indent);
+	void Parse(XMLElement* node, char*& str, int length);
+
+	void Write(XMLElement* node, char*& str);
+	void Parse(char*& str);
 
 	int length;
 };

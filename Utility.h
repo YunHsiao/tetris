@@ -1,4 +1,4 @@
-#include "vld.h"
+
 //-----------Windows------------
 #ifndef WINDOWS_USEFUL_TOOLS_
 #define WINDOWS_USEFUL_TOOLS_

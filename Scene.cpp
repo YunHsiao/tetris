@@ -298,7 +298,7 @@ void CScene::SaveGame() {
 	std::ostringstream oss;
 	if (GetFileAttributes("saves\\") == -1) 
 		_mkdir("saves\\"); 
-	if (!(GetAsyncKeyState(VK_SHIFT) & 0x8000)) {
+	if (GetAsyncKeyState(VK_SHIFT) & 0x8000) {
 		oss << "saves\\" << m_iScore << "_" << m_iLines << "_" << timeGetTime() << ".tsf";
 		FILE* file = 0;
 		fopen_s(&file, oss.str().c_str(), "wb");
@@ -373,7 +373,10 @@ void CScene::SaveGame() {
 	doc.InsertEndChild(node);
 
 	oss.str("");
-	oss << "saves\\" << m_iScore << "_" << m_iLines << "_" << timeGetTime() << ".xml";
+	oss << "saves\\" << m_iScore << "_" << m_iLines << "_" << timeGetTime();
+
+	if (GetAsyncKeyState(VK_CONTROL) & 0x8000) oss << ".xml";
+	else oss << ".tst";
 
 	doc.SaveFile(oss.str().c_str());
 }
@@ -385,7 +388,7 @@ void CScene::LoadGame() {
 	ofn.lStructSize = sizeof(ofn);
 	ofn.lpstrFile = str;
 	ofn.lpstrFile[0] = '\0';
-	ofn.lpstrFilter = TEXT("Tetris Save File\0*.xml;*.tsf\0");
+	ofn.lpstrFilter = TEXT("Tetris Save File\0*.xml;*.tsf;*.tst\0");
 	ofn.lpstrInitialDir = TEXT(".\\");
 	ofn.nMaxFile = MAX_PATH;
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
