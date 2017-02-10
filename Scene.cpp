@@ -141,7 +141,6 @@ void CScene::onTick(int iElapsedTime)
 		return;
 	m_iTime -= iElapsedTime;
 	if (m_bDown || m_iTime < 0) {
-		m_bDown = false;
 		if (Test(m_map[m_iPattern][m_iStatus], m_iX, m_iY + 1, ETO_EMPTY))
 			m_iY++, m_iTime = DROP_INTERVAL;
 		else {
@@ -233,6 +232,7 @@ void CScene::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		else if (wParam == 'N') NewGame();
 		else if (wParam == 'S') SaveGame();
 		else if (wParam == 'L') LoadGame();
+		else if (wParam == VK_DOWN) m_bDown = true;
 		if (!m_bOver) {
 			if (wParam == VK_LEFT && Test(m_map[m_iPattern][m_iStatus], 
 				m_iX - 1, m_iY, ETO_EMPTY)) {
@@ -261,16 +261,14 @@ void CScene::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 					m_iStatus = iNextS;
 					m_bUpdate = true;
 				}
-			} else if (wParam == VK_DOWN) {
-				m_bDown = true;
-			}
-			else if (wParam == VK_ESCAPE) {
+			} else if (wParam == VK_ESCAPE) {
 				Toggle();
 			}
 		}
 		break;
 	case WM_KEYUP: 
 		if (wParam == VK_DOWN) {
+			m_bDown = false;
 			unsigned long lLastDown = timeGetTime();
 			if ((lLastDown - m_lLastDown) < 300) {
 				m_iY = m_iPY;

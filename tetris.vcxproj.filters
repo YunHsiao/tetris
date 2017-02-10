@@ -30,6 +30,10 @@
     <ClCompile Include="xml.cpp">
       <Filter>Scene</Filter>
     </ClCompile>
+    <ClCompile Include="GUI.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Input.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
@@ -62,6 +66,10 @@
     <ClInclude Include="xml.h">
       <Filter>Scene</Filter>
     </ClInclude>
+    <ClInclude Include="GUI.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="tetris.rc" />

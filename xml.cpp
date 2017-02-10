@@ -242,6 +242,7 @@ int XMLDocument::SaveFile(const char* filename)
 	if (filename[len - 1] == 'l')
 		Write(firstChild, str, 0);
 	else Write(firstChild, str);
+	*str++ = 0;
 	FILE* file;
 	fopen_s(&file, filename, "w");
 	fwrite(beg, str - beg, 1, file);
@@ -252,9 +253,9 @@ int XMLDocument::SaveFile(const char* filename)
 
 int XMLDocument::LoadFile(const char* filename)
 {
-	FILE* file = 0;
 	int len = 0;
 	char *str, *beg;
+	FILE* file = 0;
 	fopen_s(&file, filename, "r");
 	fseek (file, 0, SEEK_END);
 	len = ftell(file);
@@ -292,10 +293,12 @@ void XMLDocument::Write(XMLElement* node, char*& dst)
 		}
 		Write(node->FirstChildElement(), dst);
 	}
-	if (node->GetParent() == this)
-		CopyString(dst, "\n");
 	node = node->NextSiblingElement();
-	if (node) Write(node, dst);
+	if (node) {
+		if (node->GetParent() == this)
+			CopyString(dst, "\n");
+		Write(node, dst);
+	}
 }
 
 // 自定义格式读取
@@ -315,7 +318,7 @@ void XMLDocument::Parse(char*& str)
 			len = 0;
 			break;
 		default:
-			if (*str < 32) return;
+			if (*str == 0) return;
 			while (*(str + len) != ':') len++;
 			text = NewElement(str, len);
 			str += len + 2;
@@ -350,9 +353,7 @@ void XMLDocument::Write(XMLElement* node, char*& dst, int indent)
 		CopyString(dst, str);
 		CopyString(dst, ">\n");
 	}
-	if (node->GetParent() == this && 
-		node->GetDocument()->FirstChildElement() != node && 
-		node->GetDocument()->lastChild != node)
+	if (node->GetParent() == this && firstChild != node && lastChild != node)
 		CopyString(dst, "\n");
 	node = node->NextSiblingElement();
 	if (node) Write(node, dst, indent);

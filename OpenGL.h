@@ -2,6 +2,7 @@
 #define COpenGL_H_
 
 #include "gl/gl.h"
+#pragma comment(lib,"OpenGL32.lib")
 #include "Renderer.h"
 
 class COpenGL : public CRenderer

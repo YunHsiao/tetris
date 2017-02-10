@@ -1,7 +1,7 @@
 #include "Utility.h"
 #include "Window.h"
 #include "SceneManager.h"
-#include "GDI.h"
+
 CWindow CWindow::s_wnd;
 
 CWindow::CWindow()
