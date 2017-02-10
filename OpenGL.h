@@ -1,6 +1,7 @@
 #ifndef COpenGL_H_
 #define COpenGL_H_
 
+#include "gl/gl.h"
 #include "Renderer.h"
 
 class COpenGL : public CRenderer
@@ -18,9 +19,13 @@ public:
 	unsigned int CreateTexture(const char* pSrcFile);
 
 private:
+	float* TextPosition(float* p, std::vector<int>& len, RECT* rct, int Format, unsigned line);
+
 	HDC m_DC;
 	HGLRC m_RC;
 	HWND m_hWnd;
-	std::vector<HDC> m_vTextureDC;
+	GLuint m_font;
+	std::vector<GLuint> m_vTexture;
+	std::vector<POINT> m_vSize;
 };
 #endif

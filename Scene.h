@@ -40,7 +40,11 @@ private:
 
 	// For Rendering
 	inline void UpdateScore() 
-	{ m_score = "Score: " + toString(m_iScore) + "\nLine Cleared: " + toString(m_iLines); }
+	{ 
+		std::ostringstream oss;
+		oss << "Score: " << m_iScore << "\nLine Cleared: " << m_iLines;
+		m_score = oss.str(); 
+	}
 	SRect m_rScore;
 	std::string m_score;
 	unsigned long m_color[8], m_mask;

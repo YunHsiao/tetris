@@ -77,8 +77,8 @@ void CScene::InitParams()
 	UpdateScore(); 
 	if (m_bOver) {
 		m_mask = 0x7fffffff;
-		m_score += "\n\nGame Over\nPress N to Start\nPress S to Save\n\
-				   Press L to Load\nPress Q to Quit";
+		m_score += "\n\nGame Over\nPress N to Start\nPress S to Save";
+		m_score += "\nPress L to Load\nPress Q to Quit";
 	} else {
 		m_bPaused = m_bDown = false; 
 		m_mask = 0xffffffff;
@@ -331,7 +331,7 @@ void CScene::SaveGame() {
 	child->SetText(m_iLines);
 	node->InsertEndChild(child);
 	child = doc.NewElement("Over");
-	child->SetText(m_bOver);
+	child->SetText((int) m_bOver);
 	node->InsertEndChild(child);
 	doc.InsertEndChild(node);
 
@@ -415,7 +415,7 @@ void CScene::LoadGame() {
 		node = doc.FirstChildElement("Progress");
 		m_iScore = atoi(node->FirstChildElement("Score")->GetText());
 		m_iLines = atoi(node->FirstChildElement("Lines")->GetText());
-		m_iLines = atoi(node->FirstChildElement("Over")->GetText());
+		m_bOver = atoi(node->FirstChildElement("Over")->GetText()) != 0;
 
 		node = doc.FirstChildElement("Current");
 		m_iX = atoi(node->FirstChildElement("X")->GetText());

@@ -1,12 +1,6 @@
 #ifndef CRenderer_H_
 #define CRenderer_H_
 
-enum EAlignFormat {
-	EAF_LEFT,
-	EAF_CENTER,
-	EAF_RIGHT
-};
-
 class CRenderer
 {
 public:
