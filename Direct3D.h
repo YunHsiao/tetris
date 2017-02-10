@@ -26,7 +26,6 @@ private:
 	IDirect3DDevice9* m_pD3D9Device;
 	ID3DXSprite* m_pSprite;
 	ID3DXFont* m_pFont;
-	bool m_bFontAdded;
 	std::vector<IDirect3DTexture9*> m_vTextures;
 };
 #endif

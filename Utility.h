@@ -72,4 +72,10 @@ struct SVector
 	float y;
 	float z;
 };
+
+struct SPoint
+{
+	long x;
+	long y;
+};
 #endif

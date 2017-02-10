@@ -3,19 +3,6 @@
 
 #include "gl/gl.h"
 #pragma comment(lib,"OpenGL32.lib")
-#ifndef _WIN64
-#ifdef _DEBUG
-#pragma comment(lib,"freetype27d.lib")
-#else
-#pragma comment(lib,"freetype27.lib")
-#endif
-#else
-#ifdef _DEBUG
-#pragma comment(lib,"freetype27d_64.lib")
-#else
-#pragma comment(lib,"freetype27_64.lib")
-#endif
-#endif
 #include "Renderer.h"
 
 class COpenGL : public CRenderer
@@ -33,14 +20,13 @@ public:
 	size_t CreateTexture(const char* pSrcFile);
 
 private:
-	float* TextPosition(float* p, std::vector<float>& len, RECT* rct, int Format, unsigned line);
+	size_t CreateTexture(unsigned char *image, unsigned w, unsigned h, GLenum format);
 
 	HDC m_DC;
 	HGLRC m_RC;
 	HWND m_hWnd;
-	GLuint m_font, m_textures[128];
-	float m_xoff[128];
+	GLuint m_font;
 	std::vector<GLuint> m_vTexture;
-	std::vector<POINT> m_vSize;
+	std::vector<SPoint> m_vSize;
 };
 #endif

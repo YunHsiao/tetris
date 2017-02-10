@@ -18,11 +18,12 @@ public:
 	size_t CreateTexture(const char* pSrcFile);
 
 private:
-	HFONT m_font;
+	size_t CreateTexture(unsigned char *image, unsigned w, unsigned h, bool bRGB);
+
 	HWND m_hWnd;
-	bool m_bFontAdded;
+	size_t m_font;
 	std::vector<HDC> m_vDC;
 	std::vector<HBITMAP> m_vTexture;
-	std::vector<POINT> m_vSize;
+	std::vector<SPoint> m_vSize;
 };
 #endif

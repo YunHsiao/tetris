@@ -1,6 +1,5 @@
 #include "Utility.h"
 #include "Direct3D.h"
-#include "Window.h"
 
 CDirect3D::CDirect3D():
 m_pDirect3D9(NULL),
@@ -18,7 +17,7 @@ CDirect3D::~CDirect3D()
 	Safe_Release(m_pDirect3D9);
 	for (auto it(m_vTextures.begin()); it != m_vTextures.end(); it++)
 		Safe_Release(*it);
-	if (m_bFontAdded) RemoveFontResource(TEXT("ITCKRIST.TTF"));
+	RemoveFontResource(TEXT("ITCKRIST.TTF"));
 }
 
 bool CDirect3D::onInit()
@@ -71,7 +70,7 @@ bool CDirect3D::onInit()
 	if (FAILED(hr))
 		return false;
 
-	m_bFontAdded = (AddFontResource(TEXT("ITCKRIST.TTF")) != 0);
+	AddFontResource(TEXT("ITCKRIST.TTF"));
 	if (FAILED(hr = D3DXCreateFont(m_pD3D9Device, 30, 0, FW_DONTCARE, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
 		DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Kristen ITC"), &m_pFont)))
 			return false;
