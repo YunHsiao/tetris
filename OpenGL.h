@@ -1,13 +1,13 @@
-#ifndef CGDI_H_
-#define CGDI_H_
+#ifndef COpenGL_H_
+#define COpenGL_H_
 
 #include "Renderer.h"
 
-class CGDI : public CRenderer
+class COpenGL : public CRenderer
 {
 public:
-	CGDI();
-	~CGDI();
+	COpenGL();
+	~COpenGL();
 
 	bool onInit();
 	void PreRender();
@@ -18,10 +18,9 @@ public:
 	unsigned int CreateTexture(const char* pSrcFile);
 
 private:
-	HFONT m_font;
+	HDC m_DC;
+	HGLRC m_RC;
 	HWND m_hWnd;
-	std::vector<HDC> m_vDC;
-	std::vector<HBITMAP> m_vTexture;
-	std::vector<POINT> m_vSize;
+	std::vector<HDC> m_vTextureDC;
 };
 #endif

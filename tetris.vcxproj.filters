@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="WinMain.cpp" />
+    <ClCompile Include="Renderer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Direct3D.cpp">
+      <Filter>Renderer\Direct3D</Filter>
+    </ClCompile>
+    <ClCompile Include="GDI.cpp">
+      <Filter>Renderer\GDI</Filter>
+    </ClCompile>
+    <ClCompile Include="lodepng.cpp">
+      <Filter>Renderer\GDI</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenGL.cpp">
+      <Filter>Renderer\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneManager.cpp" />
+    <ClCompile Include="Window.cpp">
+      <Filter>Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="tinyxml2.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="xml.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="Utility.h" />
+    <ClInclude Include="Renderer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Direct3D.h">
+      <Filter>Renderer\Direct3D</Filter>
+    </ClInclude>
+    <ClInclude Include="lodepng.h">
+      <Filter>Renderer\GDI</Filter>
+    </ClInclude>
+    <ClInclude Include="GDI.h">
+      <Filter>Renderer\GDI</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenGL.h">
+      <Filter>Renderer\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneManager.h" />
+    <ClInclude Include="Window.h">
+      <Filter>Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="tinyxml2.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="xml.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="tetris.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="tetris.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Renderer">
+      <UniqueIdentifier>{2eff883a-b37c-48c7-adf6-3601a9404926}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Direct3D">
+      <UniqueIdentifier>{5e7c2c75-3fdb-496a-ac0b-8167a68095b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\GDI">
+      <UniqueIdentifier>{cc1304bf-4e08-4075-aa2e-3bc16515f1fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\OpenGL">
+      <UniqueIdentifier>{9beead82-ba7f-4f61-942a-3f9ae6019ca5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Window">
+      <UniqueIdentifier>{ada500b1-162d-4b0e-aa28-1c307e7ec655}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene">
+      <UniqueIdentifier>{816d6f69-91f3-4f40-bbb1-ec5d507e675a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

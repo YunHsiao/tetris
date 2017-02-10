@@ -1,6 +1,10 @@
 #ifndef CDirect3D_H_
 #define CDirect3D_H_
 
+#include <d3d9.h>
+#pragma comment(lib,"d3d9.lib")
+#include <d3dx9.h>
+#pragma comment(lib,"d3dx9.lib")
 #include "Renderer.h"
 
 class CDirect3D : public CRenderer
@@ -18,7 +22,8 @@ public:
 	unsigned int CreateTexture(const char* pSrcFile);
 
 private:
-	void InitPresentParam(HWND hWnd, long lWindowWidth, long lWindowHeight, D3DPRESENT_PARAMETERS* D3DPresentParam);
+	void InitPresentParam(HWND hWnd, long lWindowWidth, long lWindowHeight, 
+		D3DPRESENT_PARAMETERS* D3DPresentParam);
 
 	IDirect3D9* m_pDirect3D9;
 	IDirect3DDevice9* m_pD3D9Device;

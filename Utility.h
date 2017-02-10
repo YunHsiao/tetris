@@ -7,16 +7,6 @@
 #include <Windows.h>
 #include <MMSystem.h>
 #pragma comment(lib,"Winmm.lib")
-#include <assert.h>
-#endif
-
-//-----------D3D头、库文件------------
-#ifndef D3D_USEFUL_TOOLS_
-#define D3D_USEFUL_TOOLS_
-#include <d3d9.h>
-#pragma comment(lib,"d3d9.lib")
-#include <d3dx9.h>
-#pragma comment(lib,"d3dx9.lib")
 #endif
 
 //-----------安全释放宏------------

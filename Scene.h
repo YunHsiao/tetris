@@ -43,6 +43,6 @@ private:
 	{ m_score = "Score: " + toString(m_iScore) + "\nLine Cleared: " + toString(m_iLines); }
 	SRect m_rScore;
 	std::string m_score;
-	D3DCOLOR m_color[8], m_mask;
+	unsigned long m_color[8], m_mask;
 };
 #endif
