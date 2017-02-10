@@ -1,7 +1,7 @@
 #include "Utility.h"
 #include "SceneManager.h"
 #include "Window.h"
-#include "Direct3D.h"
+#include "Renderer.h"
 
 CSceneManager CSceneManager::s_director;
 
@@ -32,14 +32,15 @@ void CSceneManager::Go() {
 			else cnt++;
 			onTick( elapsed );
 			onRender();
+			Sleep(10);
 		}
 	}
 }
 
 void CSceneManager::onInit() {
-	CWindow::getInstance()->setWinSize(640, 640); //设置窗口的大小
+	CWindow::getInstance()->setWinSize(640, 640);
 	CWindow::getInstance()->onInit();
-	CDirect3D::getInstance()->onInit();
+	CRenderer::getInstance()->onInit();
 	m_scene.onInit();
 	CWindow::getInstance()->showWindow();
 }
@@ -49,12 +50,12 @@ void CSceneManager::onTick(int iElapsedTime) {
 }
 
 void CSceneManager::onRender() {
-	CDirect3D::getInstance()->PreRender(D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER|D3DCLEAR_STENCIL);
-	CDirect3D::getInstance()->DrawText(m_FPS.c_str(), -1, 0, DT_RIGHT);
+	CRenderer::getInstance()->PreRender();
 	m_scene.onRender();
-	CDirect3D::getInstance()->PostRender();
+	CRenderer::getInstance()->DrawText(m_FPS.c_str(), 0, DT_RIGHT);
+	CRenderer::getInstance()->PostRender();
 }
 
 void CSceneManager::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	
+	m_scene.WndProc(hWnd, uMsg, wParam, lParam);
 }

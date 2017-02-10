@@ -41,6 +41,7 @@ template<typename T>inline void Safe_Delete_Array( T* & p )
 #define STL_TOOLS_
 #include <sstream>
 #include <string>
+#include <vector>
 
 template<typename T>
 std::string toString(const T& value)
@@ -54,5 +55,18 @@ std::string toString(const T& value)
 //----------Game Tools----------
 #ifndef GAME_TOOLS_
 #define GAME_TOOLS_
+struct SRect
+{
+	long left;
+	long top;
+	long right;
+	long bottom;
+};
 
+struct SVector
+{
+	float x;
+	float y;
+	float z;
+};
 #endif

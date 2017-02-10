@@ -12,7 +12,7 @@ public:
 	void Go();
 
 	void onInit();
-	void onTick(int fElapsedTime);
+	void onTick(int iElapsedTime);
 	void onRender();
 	void WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 private:
