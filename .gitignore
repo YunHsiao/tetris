@@ -1,0 +1,14 @@
+Intermediate
+ipch
+.vs
+*.iobj
+*.ipdb
+*.pdb
+*.db
+*.ilk
+*.opendb
+*.cso
+*.exe
+*.opensdf
+*.sdf
+*.suo
