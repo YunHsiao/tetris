@@ -12,9 +12,9 @@ public:
 	
 	virtual void SpriteDrawText(const char* strText, SRect* rect = 0, int Format = DT_LEFT, 
 		unsigned long color = 0xffffffff) = 0;
-	virtual void SpriteDraw(unsigned int pTexture, const SVector* pPosition = 0, 
+	virtual void SpriteDraw(size_t pTexture, const SVector* pPosition = 0,
 		unsigned long color = 0xffffffff) = 0;
-	virtual unsigned int CreateTexture(const char* pSrcFile) = 0;
+	virtual size_t CreateTexture(const char* pSrcFile) = 0;
 protected:
 	RECT m_rWnd;
 };

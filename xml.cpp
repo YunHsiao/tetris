@@ -9,6 +9,8 @@ XMLElement::XMLElement()
 	,next(0)
 	,firstChild(0)
 	,lastChild(0)
+	,chars(0)
+	,lines(0)
 {
 
 }
@@ -16,22 +18,16 @@ XMLElement::XMLElement()
 XMLElement::~XMLElement()
 {
 	Safe_Delete_Array(value);
-	XMLElement *node = firstChild, *next = node;
-	while (node != NULL) {
-		next = node->NextSiblingElement();
-		delete node;
-		node = next;
-	}
 }
 
-int XMLElement::GetLength(const char* str) const
+int XMLElement::_getLength(const char* str) const
 {
 	int len = 0;
 	for (; *str != '\0'; str++) len++;
 	return len;
 }
 
-char* XMLElement::GenerateString(int v) const
+char* XMLElement::_generateString(int v) const
 {
 	char str[16];
 	char* r;
@@ -62,16 +58,16 @@ char* XMLElement::GenerateString(int v) const
 	return r;
 }
 
-char* XMLElement::GenerateString(const char* str) const
+char* XMLElement::_generateString(const char* str) const
 {
-	int i, len = GetLength(str);
+	int i, len = _getLength(str);
 	char* r = new char[len + 1];
 	for (i = 0; i <= len; i++)
 		r[i] = str[i];
 	return r;
 }
 
-char* XMLElement::GenerateString(const char* str, int len) const
+char* XMLElement::_generateString(const char* str, int len) const
 {
 	int i;
 	char* r = new char[len + 1];
@@ -81,10 +77,10 @@ char* XMLElement::GenerateString(const char* str, int len) const
 	return r;
 }
 
-bool XMLElement::Identical(const char* s1, const char* s2) const
+bool XMLElement::_identical(const char* s1, const char* s2) const
 {
-	int l1 = GetLength(s1);
-	int l2 = GetLength(s2);
+	int l1 = _getLength(s1);
+	int l2 = _getLength(s2);
 	if (l1 - l2) return false;
 
 	for (int i = 0; i < l1; i++) 
@@ -94,50 +90,28 @@ bool XMLElement::Identical(const char* s1, const char* s2) const
 	return true;
 }
 
-void XMLElement::CopyString(char*& dst, const char* src) const
+void XMLElement::_copyString(char*& dst, const char* src) const
 {
 	for (; *src != 0; src++, dst++)
 		*dst = *src;
 }
 
-void XMLElement::SetText(int v)
+void XMLElement::SetText(int text)
 {
-	char* str = GenerateString(v);
-	if (firstChild && firstChild->ToText()) {
-		firstChild->SetValue(str);
-	} else {
-		XMLText* theText = new XMLText();
-		theText->SetValue(str);
-		theText->SetDocument(doc);
-		doc->UpdateLength(GetLength(str));
-		InsertFirstChild(theText);
-	}
+	_setText(_generateString(text));
 }
 
-void XMLElement::SetText(const char* v)
+void XMLElement::SetText(const char* text)
 {
-	char* str = GenerateString(v);
-	if (firstChild && firstChild->ToText()) {
-		firstChild->SetValue(str);
-	} else {
-		XMLText* theText = new XMLText();
-		theText->SetValue(str);
-		theText->SetDocument(doc);
-		doc->UpdateLength(GetLength(str));
-		InsertFirstChild(theText);
-	}
+	_setText(_generateString(text));
 }
 
-void XMLElement::SetText(const char* v, int len)
+void XMLElement::_setText(char* str)
 {
-	char* str = GenerateString(v, len);
 	if (firstChild && firstChild->ToText()) {
-		firstChild->SetValue(str);
+		firstChild->_setValue(str);
 	} else {
-		XMLText* theText = new XMLText();
-		theText->SetValue(str);
-		theText->SetDocument(doc);
-		doc->UpdateLength(GetLength(str));
+		XMLText* theText = doc->_newText(str);
 		InsertFirstChild(theText);
 	}
 }
@@ -145,7 +119,7 @@ void XMLElement::SetText(const char* v, int len)
 const char* XMLElement::GetText() const 
 {
 	if (firstChild && firstChild->ToText())
-		return firstChild->GetValue();
+		return firstChild->_getValue();
 	return 0;
 }
 
@@ -159,6 +133,9 @@ XMLElement* XMLElement::InsertFirstChild(XMLElement* addThis)
 		addThis->next = firstChild;
 		firstChild = addThis;
 	}
+	chars += addThis->chars + addThis->lines;
+	lines += addThis->lines;
+	if (lines == 2) lines++;
 	return addThis;
 }
 
@@ -172,6 +149,9 @@ XMLElement* XMLElement::InsertEndChild(XMLElement* addThis)
 		addThis->prev = lastChild;
 		lastChild = addThis;
 	}
+	chars += addThis->chars + addThis->lines;
+	lines += addThis->lines;
+	if (lines == 2) lines++;
 	return addThis;
 }
 
@@ -180,7 +160,7 @@ XMLElement* XMLElement::FirstChildElement(const char* name) const
 	XMLElement* child = firstChild;
 	if (!name) return child;
 	while (child) {
-		if (Identical(name, child->GetValue())) return child;
+		if (_identical(name, child->_getValue())) return child;
 		child = child->next;
 	}
 	return 0;
@@ -193,55 +173,86 @@ XMLElement*	XMLElement::NextSiblingElement()
 
 XMLDeclaration::XMLDeclaration()
 {
-	SetValue(GenerateString("xml version=\"1.0\" encoding=\"ANSI\""));
+	_setValue(_generateString("xml version=\"1.0\" encoding=\"ANSI\""));
 }
 
 XMLDocument::XMLDocument()
-	:length(0)
+	:m_elements(0)
+	,_size(0)
+	,_allocated(INITIAL_SIZE)
 {
-
+	m_elements = new XMLElement*[INITIAL_SIZE];
 }
 
 XMLDocument::~XMLDocument()
 {
-
+	for (int i = 0; i < _size; i++)
+		Safe_Delete(m_elements[i]);
+	Safe_Delete_Array(m_elements);
 }
 
 
 XMLDeclaration* XMLDocument::NewDeclaration()
 {
 	XMLDeclaration* dec = new XMLDeclaration();
-	dec->SetDocument(this);
-	UpdateLength(38);
+	dec->_setDocument(this);
+	dec->_updateLength(38, 1);
+	_addToList(dec);
 	return dec;
 }
 
 XMLElement* XMLDocument::NewElement(const char* name)
 {
-	XMLElement* r = new XMLElement();
-	r->SetValue(GenerateString(name));
-	r->SetDocument(this);
-	UpdateLength(GetLength(name) * 2 + 7); // '<'2 '>'2 '\n'2 '/'1
-	return r;
+	return _newElement(_generateString(name));
 }
 
-XMLElement* XMLDocument::NewElement(const char* name, int len)
+XMLElement* XMLDocument::_newElement(char* str)
 {
-	XMLElement* r = new XMLElement();
-	r->SetValue(GenerateString(name, len));
-	r->SetDocument(this);
-	UpdateLength(len * 2 + 7); // '<'2 '>'2 '\n'2 '/'1
-	return r;
+	XMLElement* ele = new XMLElement();
+	ele->_setValue(str);
+	ele->_setDocument(this);
+	ele->_updateLength(_getLength(str) * 2 + 7, 1); // '<'2 '>'2 '/'1 '\n'2
+	_addToList(ele);
+	return ele;
+}
+
+XMLText* XMLDocument::NewText(const char* name) 
+{
+	return _newText(_generateString(name));
+}
+
+XMLText* XMLDocument::_newText(char* str)
+{
+	XMLText* theText = new XMLText();
+	theText->_setValue(str);
+	theText->_setDocument(this);
+	theText->_updateLength(_getLength(str), 0);
+	_addToList(theText);
+	return theText;
+}
+
+void XMLDocument::_addToList(XMLElement* element)
+{
+	if (_size + 1 > _allocated) {
+		int newAllocated = (_size + 1) * 2;
+		XMLElement** newElements = new XMLElement*[newAllocated];
+		for (int i = 0; i < _size; i++)
+			newElements[i] = m_elements[i];
+		Safe_Delete_Array(m_elements);
+		m_elements = newElements;
+		_allocated = newAllocated;
+	}
+	m_elements[_size++] = element;
 }
 
 int XMLDocument::SaveFile(const char* filename)
 {
-	char* str = new char[length * 2]; // '\t's
+	char* str = new char[chars];
 	char* beg = str;
-	int len = GetLength(filename);
+	int len = _getLength(filename);
 	if (filename[len - 1] == 'l')
-		Write(firstChild, str, 0);
-	else Write(firstChild, str);
+		_write(firstChild, str, 0);
+	else _write(firstChild, str);
 	*str++ = 0;
 	FILE* file;
 	fopen_s(&file, filename, "w");
@@ -265,44 +276,44 @@ int XMLDocument::LoadFile(const char* filename)
 	fclose(file);
 	beg = str;
 	
-	len = GetLength(filename);
-	if (filename[len - 1] == 'l') Parse(this, str, 0);
-	else Parse(str);
+	len = _getLength(filename);
+	if (filename[len - 1] == 'l') _parse(this, str, 0);
+	else _parse(str);
 	Safe_Delete_Array(beg);
 	return 0;
 }
 
 // 自定义格式写入
-void XMLDocument::Write(XMLElement* node, char*& dst) 
+void XMLDocument::_write(XMLElement* node, char*& dst) 
 {
-	const char* str = node->GetValue();
-	int len = GetLength(str);
+	const char* str = node->_getValue();
+	int len = _getLength(str);
 	if (node->ToDeclaration()) {
 	} else if (node->ToText()) {
-		CopyString(dst, str);
-		CopyString(dst, "\n");
+		_copyString(dst, str);
+		_copyString(dst, "\n");
 	} else { 
-		if (node->GetParent() == this) {
-			CopyString(dst, "[");
-			CopyString(dst, str);
-			CopyString(dst, "]\n");
+		if (node->_getParent() == this) {
+			_copyString(dst, "[");
+			_copyString(dst, str);
+			_copyString(dst, "]\n");
 		} else {
-			CopyString(dst, "\t");
-			CopyString(dst, str);
-			CopyString(dst, ": ");
+			//_copyString(dst, "\t");
+			_copyString(dst, str);
+			_copyString(dst, ": ");
 		}
-		Write(node->FirstChildElement(), dst);
+		_write(node->FirstChildElement(), dst);
 	}
 	node = node->NextSiblingElement();
 	if (node) {
-		if (node->GetParent() == this)
-			CopyString(dst, "\n");
-		Write(node, dst);
+		if (node->_getParent() == this)
+			_copyString(dst, "\n");
+		_write(node, dst);
 	}
 }
 
 // 自定义格式读取
-void XMLDocument::Parse(char*& str) 
+void XMLDocument::_parse(char*& str) 
 {
 	XMLElement *child = 0, *text = 0;
 	int len = 0;
@@ -312,7 +323,7 @@ void XMLDocument::Parse(char*& str)
 		case '[':
 			while (*(str + len) != ']') len++;
 			len++;
-			child = NewElement(str + 1, len - 2);
+			child = _newElement(_generateString(str + 1, len - 2));
 			InsertEndChild(child);
 			str += len;
 			len = 0;
@@ -320,11 +331,11 @@ void XMLDocument::Parse(char*& str)
 		default:
 			if (*str == 0) return;
 			while (*(str + len) != ':') len++;
-			text = NewElement(str, len);
+			text = _newElement(_generateString(str, len));
 			str += len + 2;
 			len = 0;
 			while (*(str + len) != '\n') len++;
-			text->SetText(str, len);
+			text->_setText(_generateString(str, len));
 			child->InsertEndChild(text);
 			str += len;
 			len = 0;
@@ -333,34 +344,34 @@ void XMLDocument::Parse(char*& str)
 }
 
 // XML格式写入
-void XMLDocument::Write(XMLElement* node, char*& dst, int indent) 
+void XMLDocument::_write(XMLElement* node, char*& dst, int indent) 
 {
-	const char* str = node->GetValue();
-	int len = GetLength(str);
+	const char* str = node->_getValue();
+	int len = _getLength(str);
 	if (node->ToDeclaration()) {
-		CopyString(dst, "<?");
-		CopyString(dst, str);
-		CopyString(dst, "?>\n");
+		_copyString(dst, "<?");
+		_copyString(dst, str);
+		_copyString(dst, "?>\n");
 	} else if (node->ToText()) {
-		CopyString(--dst, str);
+		_copyString(--dst, str);
 	} else { 
 		for (int i = 0; i < indent; i++) *dst++ = '\t';
-		CopyString(dst, "<");
-		CopyString(dst, str);
-		CopyString(dst, ">\n");
-		Write(node->FirstChildElement(), dst, indent + 1);
-		CopyString(dst, "</");
-		CopyString(dst, str);
-		CopyString(dst, ">\n");
+		_copyString(dst, "<");
+		_copyString(dst, str);
+		_copyString(dst, ">\n");
+		_write(node->FirstChildElement(), dst, indent + 1);
+		_copyString(dst, "</");
+		_copyString(dst, str);
+		_copyString(dst, ">\n");
 	}
-	if (node->GetParent() == this && firstChild != node && lastChild != node)
-		CopyString(dst, "\n");
+	if (node->_getParent() == this && firstChild != node && lastChild != node)
+		_copyString(dst, "\n");
 	node = node->NextSiblingElement();
-	if (node) Write(node, dst, indent);
+	if (node) _write(node, dst, indent);
 }
 
 // XML格式读取
-void XMLDocument::Parse(XMLElement* node, char*& str, int length) 
+void XMLDocument::_parse(XMLElement* node, char*& str, int length) 
 {
 	XMLElement* child = 0;
 	int len = 0;
@@ -378,17 +389,17 @@ void XMLDocument::Parse(XMLElement* node, char*& str, int length)
 			} else {
 				while (*(str + len) != '>') len++;
 				len++;
-				child = NewElement(str + 1, len - 2);
+				child = _newElement(_generateString(str + 1, len - 2));
 				node->InsertEndChild(child);
 				str += len;
-				Parse(child, str, len);
+				_parse(child, str, len);
 				len = 0;
 			}
 			break;
 		default:
 			if (node == this) return;
 			while (*(str + len) != '<') len++;
-			node->SetText(str, len);
+			node->_setText(_generateString(str, len));
 			str += len;
 		}
 	}

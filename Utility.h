@@ -1,3 +1,6 @@
+#if defined(_DEBUG) && !defined(_WIN64)
+#include "vld.h"
+#endif
 
 //-----------Windows------------
 #ifndef WINDOWS_USEFUL_TOOLS_
@@ -6,6 +9,7 @@
 #include <stdlib.h>
 #include <Windows.h>
 #include <MMSystem.h>
+#include <assert.h>
 #pragma comment(lib,"Winmm.lib")
 #endif
 
@@ -40,6 +44,7 @@ template<typename T>inline void Safe_Delete_DC( T* & p )
 #include <sstream>
 #include <string>
 #include <vector>
+#include <map>
 
 template<typename T>
 std::string toString(const T& value)

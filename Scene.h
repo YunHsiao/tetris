@@ -26,18 +26,19 @@ public:
 	inline void OnSetFocus() { if (m_bLost) { m_bPaused = false; m_bLost = false; } }
 	void NewGame();
 	void SaveGame();
-	void LoadGame(const char* str);
+	void LoadGame(const char* str, bool official);
 private:
 	// For Simulation
-	bool Test(int sp[], int x, int y, int c);
-	int FullCollision(int sp[], int x, int y);
+	bool Test(char sp[], int x, int y, int c);
+	int FullCollision(char sp[], int x, int y);
 	void NextTile();
 	void InitParams();
 	void LoadSwitch(bool on);
-	int m_pool[SCENE_WIDTH+2][SCENE_HEIGHT+2], (*m_pPool)[SCENE_HEIGHT+2], m_map[8][4][16];
+	char m_pool[SCENE_WIDTH+2][SCENE_HEIGHT+2], (*m_pPool)[SCENE_HEIGHT+2], m_map[8][4][16];
 	int m_iX, m_iY, m_iPY, m_iPattern, m_iStatus, m_iTime, m_iNextP, m_iNextS;
-	int m_iAdjust, m_iScore, m_iLines, m_pBg, m_pTile, m_iKeyTime;
-	bool m_bPaused, m_bLost, m_bOver, m_bUpdate, m_bDown;
+	int m_iAdjust, m_iScore, m_iLines, m_iKeyTime;
+	bool m_bPaused, m_bLost, m_bOver, m_bUpdate;
+	size_t m_pBg, m_pTile, m_pTilePreview;
 
 	// For Rendering
 	inline void UpdateScore() 
@@ -49,11 +50,13 @@ private:
 	SRect m_rScore;
 	std::string m_score;
 	CInput* m_input;
-	unsigned long m_color[8], m_mask;
+	unsigned long m_vColor[9], *m_color, m_mask;
+	char m_poolPreview[SCENE_WIDTH+2][SCENE_HEIGHT+2];
 
 	// For Save & Load
 	bool m_bLoad;
 	std::vector<std::string> m_saves;
-	char m_strCurrent[MAX_PATH];
+	char m_strCurrent[MAX_PATH], m_filePath[MAX_PATH];
+	unsigned m_iBeg, m_iCur;
 };
 #endif

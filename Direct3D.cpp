@@ -18,6 +18,7 @@ CDirect3D::~CDirect3D()
 	Safe_Release(m_pDirect3D9);
 	for (auto it(m_vTextures.begin()); it != m_vTextures.end(); it++)
 		Safe_Release(*it);
+	if (m_bFontAdded) RemoveFontResource(TEXT("ITCKRIST.TTF"));
 }
 
 bool CDirect3D::onInit()
@@ -70,22 +71,14 @@ bool CDirect3D::onInit()
 	if (FAILED(hr))
 		return false;
 
-	hr = D3DXCreateFont(m_pD3D9Device, 30, 0, FW_DONTCARE, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
-		DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Kristen ITC"), &m_pFont);
-	if (FAILED(hr)) {
-		hr = D3DXCreateFont(m_pD3D9Device, 30, 0, FW_DONTCARE, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
-			DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("ËÎÌו"), &m_pFont);
-		if (FAILED(hr))
+	m_bFontAdded = (AddFontResource(TEXT("ITCKRIST.TTF")) != 0);
+	if (FAILED(hr = D3DXCreateFont(m_pD3D9Device, 30, 0, FW_DONTCARE, 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+		DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Kristen ITC"), &m_pFont)))
 			return false;
-	}
 	if (FAILED(hr = D3DXCreateSprite(m_pD3D9Device, &m_pSprite))) 
 		return false;
 
 	return true;
-}
-
-void CDirect3D::InitPresentParam(HWND hWnd, long lWindowWidth, long lWindowHeight, D3DPRESENT_PARAMETERS* D3DPresentParam)
-{
 }
 
 void CDirect3D::SpriteDrawText(const char* strText, SRect* rect, int Format, unsigned long color)
@@ -94,7 +87,7 @@ void CDirect3D::SpriteDrawText(const char* strText, SRect* rect, int Format, uns
 	m_pFont->DrawTextA(m_pSprite, strText, -1, rect?reinterpret_cast<RECT*>(rect):&m_rWnd, Format, color);
 }
 
-void CDirect3D::SpriteDraw(unsigned int pTexture, const SVector* pPosition, unsigned long color) 
+void CDirect3D::SpriteDraw(size_t pTexture, const SVector* pPosition, unsigned long color)
 {
 	if (!m_pSprite || m_vTextures.size() <= pTexture) return;
 	m_pSprite->Draw(m_vTextures[pTexture], 0, 0, reinterpret_cast<const D3DXVECTOR3*>(pPosition), color);
@@ -121,7 +114,7 @@ void CDirect3D::PostRender()
 	m_pD3D9Device->Present(NULL, NULL, NULL, NULL);
 }
 
-unsigned int CDirect3D::CreateTexture(const char* pSrcFile) {
+size_t CDirect3D::CreateTexture(const char* pSrcFile) {
 	if (!m_pD3D9Device)
 		return -1;
 

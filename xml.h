@@ -1,6 +1,8 @@
 #ifndef CXML_H
 #define CXML_H
 
+#define INITIAL_SIZE 10
+
 class XMLText;
 class XMLDocument;
 class XMLDeclaration;
@@ -8,9 +10,8 @@ class XMLElement {
 public:
 	XMLElement();
 	virtual ~XMLElement();
-	void SetText(int v);
-	void SetText(const char* v);
-	void SetText(const char* v, int len);
+	void SetText(int text);
+	void SetText(const char* text);
 	const char* GetText() const;
 	XMLElement* InsertFirstChild(XMLElement* addThis);
 	XMLElement* InsertEndChild(XMLElement* addThis);
@@ -20,19 +21,21 @@ public:
 	virtual XMLDocument* ToDocument() { return 0; }
 	virtual XMLDeclaration* ToDeclaration() { return 0; }
 
-	void SetDocument(XMLDocument* _doc) { doc = _doc; }
-	XMLDocument* GetDocument() { return doc; }
-	XMLElement* GetParent() { return parent; }
-	void SetValue(char* v) { Safe_Delete_Array(value); value = v; }
-	const char* GetValue() const { return value; }
+	void _setDocument(XMLDocument* _doc) { doc = _doc; }
+	XMLDocument* _getDocument() { return doc; }
+	XMLElement* _getParent() { return parent; }
+	void _setValue(char* v) { Safe_Delete_Array(value); value = v; }
+	const char* _getValue() const { return value; }
+	void _setText(char* str);
+	void _updateLength(int _chars, int _lines) { chars += _chars; lines += _lines; }
 
 protected:
-	char* GenerateString(int v) const;
-	char* GenerateString(const char* str) const;
-	char* GenerateString(const char* str, int len) const;
-	bool Identical(const char* s1, const char* s2) const;
-	int GetLength(const char* str) const;
-	void CopyString(char*& dst, const char* src) const;
+	char* _generateString(int v) const;
+	char* _generateString(const char* str) const;
+	char* _generateString(const char* str, int len) const;
+	bool _identical(const char* s1, const char* s2) const;
+	int _getLength(const char* str) const;
+	void _copyString(char*& dst, const char* src) const;
 
 	XMLDocument* doc;
 	XMLElement* parent;
@@ -41,6 +44,7 @@ protected:
 	XMLElement* firstChild;
 	XMLElement* lastChild;
 	char* value;
+	int chars, lines;
 };
 
 class XMLText : public XMLElement {
@@ -54,20 +58,24 @@ public:
 
 	XMLDeclaration* NewDeclaration();
 	XMLElement* NewElement(const char* name);
-	XMLElement* NewElement(const char* name, int len);
+	XMLText* XMLDocument::NewText(const char* name);
 	int SaveFile(const char* filename);
 	int LoadFile(const char* filename);
 	XMLDocument* ToDocument() { return this; }
-	void UpdateLength(int len) { length += len; }
 
-private:
-	void Write(XMLElement* node, char*& str, int indent);
-	void Parse(XMLElement* node, char*& str, int length);
+	XMLElement* _newElement(char* str);
+	XMLText* _newText(char* str);
 
-	void Write(XMLElement* node, char*& str);
-	void Parse(char*& str);
+protected:
+	void _write(XMLElement* node, char*& str, int indent);
+	void _parse(XMLElement* node, char*& str, int length);
 
-	int length;
+	void _write(XMLElement* node, char*& str);
+	void _parse(char*& str);
+
+	void _addToList(XMLElement* element);
+	XMLElement** m_elements;
+	int _size, _allocated;
 };
 
 class XMLDeclaration : public XMLElement {

@@ -26,10 +26,10 @@ public:
 	unsigned long GetKeyInterval(unsigned key) const { return m_this[key] - m_last[key]; }
 
 	// 几个特殊用法：
-	// VK_RBUTTON 左键单击
-	// VK_MBUTTON 左键双击
-	// VK_XBUTTON1 滚轮向上
-	// VK_XBUTTON2 滚轮向下
+	// KS_LBUTTON_CLICK			左键单击
+	// KS_LBUTTON_DOUBLE_CLICK	左键双击
+	// KS_WHEEL_UP				滚轮向上
+	// KS_WHEEL_DOWN			滚轮向下
 	bool GetKeyState(unsigned key) const { return m_keys[key]; }
 	void KeepKeyState(unsigned key, bool keep) { m_mask[key] = keep; }
 	// OBSOLETE

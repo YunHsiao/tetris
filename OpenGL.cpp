@@ -2,6 +2,8 @@
 #include "OpenGL.h"
 #include "Window.h"
 #include "lodepng.h"
+#include "ft2build.h"
+#include FT_GLYPH_H
 
 COpenGL::COpenGL()
 {
@@ -14,6 +16,7 @@ COpenGL::~COpenGL()
 	m_vTexture.clear();
 	m_vSize.clear();
 	glDeleteLists(m_font, 128);
+	glDeleteTextures(128, m_textures);
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext( m_RC);
 	ReleaseDC(m_hWnd, m_DC);
@@ -51,24 +54,79 @@ bool COpenGL::onInit()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	HFONT hFont = CreateFont(30, 0, 0, 0, 0, 0, 0, 0, ANSI_CHARSET, 0, 0, 
-		ANTIALIASED_QUALITY, 0, TEXT("Kristen ITC"));
-	if (!hFont) hFont = CreateFont(30, 0, 0, 0, 0, 0, 0, 0, ANSI_CHARSET, 0, 0, 
-		ANTIALIASED_QUALITY, 0, TEXT("宋体"));
-	if (!hFont) return false;
-	HFONT hOldFont = (HFONT)SelectObject(m_DC, hFont);
-	DeleteObject(hOldFont);
+	// 使用freetype生成字体位图
+	FT_Face face;
+	FT_Library library;
+	if (FT_Init_FreeType(&library)) 
+		return false;
+	if (FT_New_Face(library, "ITCKRIST.TTF", 0, &face)) 
+		return false;
+
+	FT_Set_Char_Size(face, 18 << 6, 18 << 6, 96, 96);
 	m_font = glGenLists(128);
-	wglUseFontBitmaps(m_DC, 0, 128, m_font);
+	glGenTextures(128, m_textures);
+	for (unsigned char i = 0; i < 128; i++) {
+		if (FT_Load_Glyph(face, FT_Get_Char_Index(face, i), FT_LOAD_DEFAULT))
+			return false;
+		FT_Glyph glyph;
+		if (FT_Get_Glyph(face->glyph, &glyph))
+			return false;
+
+		FT_Glyph_To_Bitmap(&glyph, FT_RENDER_MODE_NORMAL, 0, 1);
+		FT_BitmapGlyph bitmap_glyph = (FT_BitmapGlyph)glyph;
+		FT_Bitmap& bitmap = bitmap_glyph->bitmap;
+
+		unsigned width = 1, height = 1;
+		while (width < bitmap.width) width <<= 1;
+		while (height < bitmap.rows) height <<= 1;
+		GLubyte* expanded_data = new GLubyte[2 * width * height];
+
+		for (unsigned j = 0; j < height; j++) {
+			for (unsigned i = 0; i < width; i++) {
+				expanded_data[2 * (i + j * width)] = 
+					expanded_data[2 * (i + j * width) + 1] =
+					(i >= bitmap.width || j >= bitmap.rows) ?
+					0 : bitmap.buffer[i + bitmap.width * j];
+			}
+		}
+
+		glBindTexture(GL_TEXTURE_2D, m_textures[i]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height,
+			0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, expanded_data);
+		delete[] expanded_data;
+
+		glNewList(m_font + i, GL_COMPILE);
+		glBindTexture(GL_TEXTURE_2D, m_textures[i]);
+		glPushMatrix();
+		glTranslatef(0, (float) -bitmap_glyph->top, 0);
+		float x = (float) bitmap.width / width;
+		float y = (float) bitmap.rows / height;
+		glBegin(GL_QUADS);
+		glTexCoord2f(0, 0); glVertex2i(0, 0);
+		glTexCoord2f(x, 0); glVertex2i(bitmap.width, 0);
+		glTexCoord2f(x, y); glVertex2i(bitmap.width, bitmap.rows);
+		glTexCoord2f(0, y); glVertex2i(0, bitmap.rows);
+		glEnd();
+		glPopMatrix();
+		m_xoff[i] = (float) (face->glyph->advance.x >> 6);
+		glTranslatef(m_xoff[i], 0, 0);
+		glEndList();
+	}
+
+	FT_Done_Face(face);
+	FT_Done_FreeType(library);
+	/**/
 	return true;
 }
 
-float* COpenGL::TextPosition(float* p, std::vector<int>& len, RECT* rct, int Format, unsigned line)
+float* COpenGL::TextPosition(float* p, std::vector<float>& len, RECT* rct, int Format, unsigned line)
 {
-	float x(11.f), y(24.f), ymargin(5.f);
+	float y(24.f), ymargin(5.f);
 
-	if (Format & DT_CENTER) p[0] = rct->left + (rct->right - rct->left - len[line] * x) / 2.f;
-	else if (Format & DT_RIGHT) p[0] = rct->right - (len[line] + 1) * x;
+	if (Format & DT_CENTER) p[0] = rct->left + (rct->right - rct->left - len[line]) / 2.f;
+	else if (Format & DT_RIGHT) p[0] = rct->right - len[line] - 1.f;
 	else p[0] = rct->left + 1.f;
 
 	if (Format & DT_VCENTER) p[1] = rct->top + (rct->bottom - rct->top - len.size() * y 
@@ -89,29 +147,34 @@ void COpenGL::SpriteDrawText(const char* strText, SRect* rect, int Format, unsig
 	b = color & 0xff;
 	glColor4ub(r, g, b, a); 
 
-	std::vector<int> len;
+	std::vector<float> len;
 	const char* str = strText;
-	int l = 0, lmax = 0;
-	for(; *str != 0; str++, l++) {
+	float xoff = 0;
+	for (; *str; str++) {
 		if (*str =='\n') {
-			len.push_back(l);
-			if (l > lmax) lmax = l;
-			l = 0;
+			len.push_back(xoff);
+			xoff = 0;
+		} else {
+			xoff += m_xoff[*str];
 		}
 	}
-	if (l) len.push_back(l);
+	if (xoff) len.push_back(xoff);
 
 	float p[2];
 	RECT* rct = rect ? reinterpret_cast<RECT*>(rect) : &m_rWnd;
 	str = strText;
-	for (unsigned line = 0; line < len.size(); line++) {
-		glRasterPos2fv(TextPosition(p, len, rct, Format, line));
-		for (int i = 0; i < len[line]; i++, str++) 
-			glCallList(m_font + *str);
+	for (unsigned line = 0; line < len.size(); line++, str++) {
+		glPushMatrix();
+		TextPosition(p, len, rct, Format, line);
+		glTranslatef(p[0], p[1], 0.f);
+		while (*str && *str != '\n')
+			glCallList(m_font + *str++);
+		glPopMatrix();
 	}
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void COpenGL::SpriteDraw(unsigned int pTexture, const SVector* pPosition, unsigned long color) 
+void COpenGL::SpriteDraw(size_t pTexture, const SVector* pPosition, unsigned long color)
 {
 	float x(0.f), y(0.f);
 	if (pPosition) {
@@ -124,7 +187,6 @@ void COpenGL::SpriteDraw(unsigned int pTexture, const SVector* pPosition, unsign
 	g = (color >> 8) & 0xff;
 	b = color & 0xff;
 
-	/**/
 	glColor4ub(r, g, b, a); 
 	glBindTexture(GL_TEXTURE_2D, m_vTexture[pTexture]);
 	glBegin(GL_QUADS);
@@ -134,15 +196,6 @@ void COpenGL::SpriteDraw(unsigned int pTexture, const SVector* pPosition, unsign
 	glTexCoord2f(0.f, 1.f);	glVertex2f(x, y + m_vSize[pTexture].y);
 	glEnd();
 	glBindTexture(GL_TEXTURE_2D, 0);
-	/**
-	glBegin(GL_QUADS);
-	glColor4ub(r, g, b, a); 
-	glVertex2f(x, y);
-	glVertex2f(x+25.f, y);
-	glVertex2f(x+25.f, y+25.f);
-	glVertex2f(x, y+25.f);
-	glEnd();
-	/**/
 }
 
 void COpenGL::PreRender() 
@@ -156,7 +209,7 @@ void COpenGL::PostRender()
 	SwapBuffers(m_DC);
 }
 
-unsigned int COpenGL::CreateTexture(const char* pSrcFile) 
+size_t COpenGL::CreateTexture(const char* pSrcFile)
 {   
 	std::vector<unsigned char> image;
 	unsigned w, h;
@@ -165,9 +218,10 @@ unsigned int COpenGL::CreateTexture(const char* pSrcFile)
 	GLuint texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexImage2D(GL_TEXTURE_2D,0, GL_RGBA, w, h, 0,
-	GL_RGBA, GL_UNSIGNED_BYTE, (void*) image.data());
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0,
+		GL_RGBA, GL_UNSIGNED_BYTE, (void*)image.data());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	m_vTexture.push_back(texture);
 	POINT pt;
 	pt.x = w;

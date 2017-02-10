@@ -11,7 +11,7 @@ const CInput* CGUI::s_input = 0;
 const POINTS* CGUI::s_pCur = 0;
 const POINTS* CGUI::s_pDown = 0;
 const POINTS* CGUI::s_pUp = 0;
-unsigned CGUI::s_pButton[3] = { 0, 0, 0 };
+size_t CGUI::s_pButton[3] = { 0, 0, 0 };
 
 void CGUI::onInit()
 {
@@ -59,18 +59,25 @@ bool CGUI::InRect(const SRect* rect, const POINTS* p)
 		&& (p->y >= rect->top) && (p->y <= rect->bottom);
 }
 
-bool CGUI::List(const SRect* rect, std::vector<std::string>& v, unsigned& cur, unsigned& beg)
+bool CGUI::List(const SRect* rect, std::vector<std::string>& v, unsigned& cur, unsigned& beg, bool& bEvent)
 {
-	bool bEvent = false;
-	unsigned cnt = v.size();
+	bool bChanged = false;
+	size_t cnt = v.size();
 	unsigned visible = (rect->bottom - rect->top) / LIST_ITEM_HEIGHT;
 
 	if (s_input->GetKeyState(VK_UP)) {
-		cur = CMID(cur - 1, 0, cnt - 1);
-		if (cur < beg) beg--;
-	} else if (s_input->GetKeyState(VK_DOWN)) {
-		cur = CMID(cur + 1, 0, cnt - 1);
-		if (cur >= (beg + visible)) beg++;
+		if (cur > 0) {
+			cur--;
+			bChanged = true;
+		}
+		if (cur < beg) beg = cur;
+	}
+	else if (s_input->GetKeyState(VK_DOWN)) {
+		if (cur < cnt - 1) {
+			cur++;
+			bChanged = true;
+		}
+		if (cur >= (beg + visible)) beg = cur - visible + 1;
 	} 
 
 	// ¹öÂÖÊÂ¼þ
@@ -80,23 +87,26 @@ bool CGUI::List(const SRect* rect, std::vector<std::string>& v, unsigned& cur, u
 	if (s_input->GetKeyState(KS_LBUTTON_CLICK)) {
 		if (InRect(rect, s_pUp) && InRect(rect, s_pDown)) 
 			cur = beg + (s_pUp->y - rect->top) / LIST_ITEM_HEIGHT;
+		bChanged = true;
 	}
 	// ×ó¼üË«»÷
 	if (s_input->GetKeyState(KS_LBUTTON_DOUBLE_CLICK)) {
 		if (InRect(rect, s_pUp) && InRect(rect, s_pDown)) {
 			cur = beg + (s_pUp->y - rect->top) / LIST_ITEM_HEIGHT;
 			bEvent = true;
-		}
-	}
+		} 
+	} else if (s_input->GetKeyState(VK_RETURN)) {
+		bEvent = true;
+	} else bEvent = false;
 
 	SRect r = *rect;
 	r.bottom = r.top + LIST_ITEM_HEIGHT;
-	unsigned limit = min(beg + visible, cnt);
-	for (unsigned i = beg; i < limit; i++) {
+	size_t limit = min(beg + visible, cnt);
+	for (size_t i = beg; i < limit; i++) {
 		CSceneManager::getRenderer()->SpriteDrawText(v[i].c_str(), &r, 
 			DT_CENTER | DT_VCENTER, i == cur ? 0xffffffff : 0x7fffffff);
 		r.top += LIST_ITEM_HEIGHT;
 		r.bottom += LIST_ITEM_HEIGHT;
 	}
-	return bEvent;
+	return bChanged;
 }

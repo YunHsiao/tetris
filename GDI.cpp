@@ -19,15 +19,15 @@ CGDI::~CGDI()
 	m_vDC.clear();
 	m_vSize.clear();
 	Safe_Delete_Object(m_font);
+	if (m_bFontAdded) RemoveFontResource(TEXT("ITCKRIST.TTF"));
 }
 
 bool CGDI::onInit()
 {
 	m_hWnd = CWindow::getInstance()->getHWND();
+	m_bFontAdded = (AddFontResource(TEXT("ITCKRIST.TTF")) != 0);
 	m_font = CreateFont(30, 0, 0, 0, 0, 0, 0, 0, ANSI_CHARSET, 0, 0, 
 		ANTIALIASED_QUALITY, 0, TEXT("Kristen ITC"));
-	if (!m_font) m_font = CreateFont(30, 0, 0, 0, 0, 0, 0, 0, ANSI_CHARSET, 0, 0, 
-		ANTIALIASED_QUALITY, 0, TEXT("ËÎÌו"));
 	if (!m_font) return false;
 	m_rWnd.right = CWindow::getInstance()->getWinWidth();
 	m_rWnd.bottom = CWindow::getInstance()->getWinHeight();
@@ -51,7 +51,7 @@ void CGDI::SpriteDrawText(const char* strText, SRect* rect, int Format, unsigned
 	DrawText(m_vDC[0], strText, -1, rect?reinterpret_cast<RECT*>(rect):&m_rWnd, Format);
 }
 
-void CGDI::SpriteDraw(unsigned int pTexture, const SVector* pPosition, unsigned long color) 
+void CGDI::SpriteDraw(size_t pTexture, const SVector* pPosition, unsigned long color)
 {
 	if (pTexture >= m_vTexture.size()) 
 		return;
@@ -83,7 +83,7 @@ void CGDI::PostRender()
 	ReleaseDC(m_hWnd, screenDC);
 }
 
-unsigned int CGDI::CreateTexture(const char* pSrcFile) 
+size_t CGDI::CreateTexture(const char* pSrcFile)
 {
 	std::vector<unsigned char> image;
 	unsigned w, h;
